@@ -1,0 +1,214 @@
+import React, { useState } from 'react';
+import { Outlet, useLocation, Link } from 'react-router-dom';
+import {
+  LayoutDashboard,
+  Users,
+  Calendar,
+  Trophy,
+  Shield,
+  UserCircle,
+  Settings,
+  LogOut,
+  Mail,
+  Bell,
+  ChevronDown,
+  Play,
+  Menu,
+  X,
+} from 'lucide-react';
+import { ClubBadge } from '@/components/ui/ClubBadge';
+import { cn } from '@/lib/utils';
+
+interface PortalLayoutProps {
+  role: 'admin' | 'coach' | 'parent';
+}
+
+const portalConfig: Record<string, { label: string }> = {
+  admin: { label: 'Admin Portal' },
+  coach: { label: 'Coach Portal' },
+  parent: { label: 'Parent Portal' },
+};
+
+const sidebarItems: Record<
+  string,
+  Array<{ label: string; href: string; icon: React.ComponentType<{ className?: string }> }>
+> = {
+  admin: [
+    { label: 'Dashboard', href: '/admin', icon: LayoutDashboard },
+    { label: 'Teams', href: '/admin/teams', icon: Users },
+    { label: 'Players', href: '/admin/players', icon: UserCircle },
+    { label: 'Matches', href: '/admin/matches', icon: Calendar },
+    { label: 'Coaches', href: '/admin/coaches', icon: Users },
+    { label: 'Parents', href: '/admin/parents', icon: UserCircle },
+    { label: 'Subscriptions', href: '/admin/subscriptions', icon: Shield },
+    { label: 'Facilities', href: '/admin/facilities', icon: Trophy },
+    { label: 'Settings', href: '/admin/settings', icon: Settings },
+  ],
+  coach: [
+    { label: 'Dashboard', href: '/coach', icon: LayoutDashboard },
+    { label: 'My Teams', href: '/coach/teams', icon: Users },
+    { label: 'Training', href: '/coach/training', icon: Calendar },
+    { label: 'Matches', href: '/coach/matches', icon: Trophy },
+    { label: 'Player Reports', href: '/coach/reports', icon: Mail },
+    { label: 'Attendance', href: '/coach/attendance', icon: Calendar },
+    { label: 'Settings', href: '/coach/settings', icon: Settings },
+  ],
+  parent: [
+    { label: 'Dashboard', href: '/parent', icon: LayoutDashboard },
+    { label: 'My Children', href: '/parent/children', icon: UserCircle },
+    { label: 'Matches', href: '/parent/matches', icon: Calendar },
+    { label: 'Training', href: '/parent/training', icon: Play },
+    { label: 'Payments', href: '/parent/payments', icon: Shield },
+    { label: 'Subscriptions', href: '/parent/subscriptions', icon: Mail },
+    { label: 'Settings', href: '/parent/settings', icon: Settings },
+  ],
+};
+
+export function PortalLayout({ role }: PortalLayoutProps) {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const location = useLocation();
+
+  const config = portalConfig[role];
+  const items = sidebarItems[role];
+
+  return (
+    <div className="min-h-screen bg-[#07090C] text-[#F3F4F6]">
+      {/* Top Navigation */}
+      <header className="fixed top-0 left-0 right-0 z-40 h-16 border-b border-club-border bg-[#07090C]/90 backdrop-blur-md">
+        <div className="px-4 sm:px-6 lg:px-8 flex items-center justify-between h-full">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setIsSidebarOpen((prev) => !prev)}
+              className="lg:hidden p-2 rounded-lg text-club-silver hover:text-white hover:bg-club-surface transition-colors"
+              aria-label="Toggle sidebar"
+            >
+              {isSidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
+            <Link to={`/${role}`} className="flex items-center gap-2">
+              <ClubBadge size="sm" variant="dark" showText={false} />
+              <span className="font-display font-bold text-lg tracking-tight text-white">
+                VK {config.label}
+              </span>
+            </Link>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <Link
+              to="/"
+              className="hidden sm:inline-flex items-center gap-2 text-xs font-medium text-club-muted hover:text-club-pitch transition-colors"
+            >
+              View Public Site
+            </Link>
+
+            {/* Notifications */}
+            <button className="relative p-2 rounded-lg text-club-silver hover:text-white hover:bg-club-surface transition-colors">
+              <Bell className="w-5 h-5" />
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-club-pitch rounded-full animate-pulse" />
+            </button>
+
+            {/* User Profile */}
+            <div className="relative">
+              <button
+                onClick={() => setIsUserMenuOpen((prev) => !prev)}
+                className="flex items-center gap-3 px-2 sm:px-3 py-1.5 rounded-full border border-club-border bg-club-surface text-club-silver hover:text-white hover:border-club-pitch transition-all"
+              >
+                <div className="w-8 h-8 rounded-full bg-club-pitch flex items-center justify-center text-club-darkest font-bold text-sm">
+                  VK
+                </div>
+                <div className="hidden md:block text-left">
+                  <p className="text-sm font-medium text-white leading-tight">Portal User</p>
+                  <p className="text-xs text-club-muted leading-tight">{config.label}</p>
+                </div>
+                <ChevronDown className="w-4 h-4 text-club-muted" />
+              </button>
+
+              {isUserMenuOpen && (
+                <div className="absolute right-0 mt-2 w-52 bg-club-surface border border-club-border rounded-xl shadow-2xl z-50 overflow-hidden">
+                  <div className="p-4 border-b border-club-border">
+                    <p className="text-sm font-medium text-white">Portal User</p>
+                    <p className="text-xs text-club-muted">{config.label}</p>
+                  </div>
+                  <div className="p-2">
+                    <button className="w-full flex items-center gap-3 px-3 py-2 text-sm text-club-silver hover:bg-club-pitch hover:text-club-darkest rounded-lg transition-colors">
+                      <Mail className="w-4 h-4" />
+                      Profile
+                    </button>
+                    <button className="w-full flex items-center gap-3 px-3 py-2 text-sm text-club-silver hover:bg-club-pitch hover:text-club-darkest rounded-lg transition-colors">
+                      <Settings className="w-4 h-4" />
+                      Settings
+                    </button>
+                    <div className="border-t border-club-border mt-2 pt-2">
+                      <button className="w-full flex items-center gap-3 px-3 py-2 text-sm text-destructive hover:bg-destructive/10 rounded-lg transition-colors">
+                        <LogOut className="w-4 h-4" />
+                        Sign Out
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Sidebar */}
+      <aside
+        className={cn(
+          'fixed top-16 bottom-0 left-0 z-30 w-64 border-r border-club-border bg-[#07090C] transition-transform duration-300',
+          isSidebarOpen ? 'translate-x-0' : '-translate-x-full',
+          'lg:translate-x-0'
+        )}
+      >
+        <div className="flex h-full flex-col">
+          <nav className="flex-1 overflow-y-auto p-4 space-y-1">
+            {items.map((item) => {
+              const Icon = item.icon;
+              const isActive =
+                location.pathname === item.href ||
+                (item.href !== `/${role}` && location.pathname.startsWith(item.href + '/'));
+              return (
+                <Link
+                  key={item.label}
+                  to={item.href}
+                  onClick={() => setIsSidebarOpen(false)}
+                  className={cn(
+                    'flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200',
+                    isActive
+                      ? 'bg-club-pitch text-club-darkest shadow-[0_0_15px_rgba(0,230,118,0.2)]'
+                      : 'text-club-silver hover:text-white hover:bg-club-surface'
+                  )}
+                >
+                  <Icon className="w-5 h-5" />
+                  {item.label}
+                </Link>
+              );
+            })}
+          </nav>
+
+          <div className="p-4 border-t border-club-border">
+            <button className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors">
+              <LogOut className="w-4 h-4" />
+              Sign Out
+            </button>
+          </div>
+        </div>
+      </aside>
+
+      {/* Mobile Sidebar Overlay */}
+      {isSidebarOpen && (
+        <div
+          className="lg:hidden fixed inset-0 top-16 z-20 bg-black/70 backdrop-blur-sm"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+
+      {/* Page Content */}
+      <main className="lg:pl-64 pt-16">
+        <div className="p-4 sm:p-6 lg:p-8">
+          <Outlet />
+        </div>
+      </main>
+    </div>
+  );
+}

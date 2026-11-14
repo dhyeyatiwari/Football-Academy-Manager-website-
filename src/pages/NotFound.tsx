@@ -1,26 +1,45 @@
-import { useLocation } from "react-router-dom";
-import { useEffect } from "react";
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { Home, ArrowLeft } from 'lucide-react';
+import { ClubBadge } from '@/components/ui/ClubBadge';
+import { PitchBackground } from '@/components/ui/PitchBackground';
 
 const NotFound = () => {
-  const location = useLocation();
-
-  useEffect(() => {
-    console.error(
-      "404 Error: User attempted to access non-existent route:",
-      location.pathname,
-    );
-  }, [location.pathname]);
-
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">404</h1>
-        <p className="text-xl text-gray-600 mb-4">Oops! Page not found</p>
-        <a href="/" className="text-blue-500 hover:text-blue-700 underline">
-          Return to Home
-        </a>
+    <PitchBackground variant="minimal">
+      <div className="min-h-screen flex items-center justify-center px-4">
+        <div className="text-center space-y-8">
+          <div className="flex justify-center">
+            <ClubBadge size="xl" variant="default" showText={true} />
+          </div>
+          
+          <h1 className="font-display text-6xl md:text-8xl font-bold text-white tracking-tight">
+            404
+          </h1>
+          
+          <p className="text-xl md:text-2xl text-club-muted max-w-md mx-auto">
+            The page you're looking for doesn't exist or has been moved.
+          </p>
+          
+          <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
+            <Link
+              to="/"
+              className="inline-flex items-center gap-2 px-8 py-4 bg-club-pitch text-club-darkest font-bold text-lg rounded-xl hover:bg-club-pitch-hover transition-all duration-300 shadow-[0_0_20px_rgba(0,230,118,0.3)]"
+            >
+              <Home className="w-5 h-5" />
+              Back to Home
+            </Link>
+            <Link
+              to="/"
+              className="inline-flex items-center gap-2 px-8 py-4 border-2 border-club-pitch text-club-pitch font-bold text-lg rounded-xl hover:bg-club-pitch hover:text-club-darkest transition-all duration-300"
+            >
+              <ArrowLeft className="w-5 h-5" />
+              Explore Academy
+            </Link>
+          </div>
+        </div>
       </div>
-    </div>
+    </PitchBackground>
   );
 };
 
