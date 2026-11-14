@@ -64,7 +64,7 @@ const sidebarItems: Record<
   ],
 };
 
-export function PortalLayout({ role }: PortalLayoutProps) {
+export default function PortalLayout({ role }: PortalLayoutProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const location = useLocation();
