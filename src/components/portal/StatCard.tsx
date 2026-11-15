@@ -19,7 +19,7 @@ export function StatCard({ label, value, icon: Icon, trend, accent = false, clas
   return (
     <div
       className={cn(
-        'relative overflow-hidden rounded-2xl border border-club-border bg-club-surface p-6 transition-all duration-300 hover:border-club-pitch/60',
+        'relative overflow-hidden rounded-2xl border border-club-border bg-club-surface p-6 transition-all duration-300 hover:border-club-red/60',
         className
       )}
     >
@@ -31,7 +31,7 @@ export function StatCard({ label, value, icon: Icon, trend, accent = false, clas
             <div
               className={cn(
                 'mt-3 inline-flex items-center gap-1 text-xs font-medium',
-                trend.isPositive ? 'text-club-pitch' : 'text-destructive'
+                trend.isPositive ? 'text-club-red' : 'text-destructive'
               )}
             >
               {trend.isPositive ? (
@@ -46,13 +46,15 @@ export function StatCard({ label, value, icon: Icon, trend, accent = false, clas
         <div
           className={cn(
             'flex h-12 w-12 items-center justify-center rounded-xl',
-            accent ? 'bg-club-pitch text-club-darkest' : 'bg-club-pitch/15 text-club-pitch'
+            accent ? 'bg-club-red text-club-silver' : 'bg-club-red/10 text-club-red'
           )}
         >
           <Icon className="h-6 w-6" />
         </div>
       </div>
-      <div className="pointer-events-none absolute -bottom-8 -right-8 h-24 w-24 rounded-full bg-club-pitch/5 blur-2xl" />
+      <div
+        className="pointer-events-none absolute -bottom-8 -right-8 h-24 w-24 rounded-full bg-club-red/5 blur-2xl"
+      />
     </div>
   );
 }

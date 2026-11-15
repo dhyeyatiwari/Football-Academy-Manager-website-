@@ -73,9 +73,9 @@ export default function PortalLayout({ role }: PortalLayoutProps) {
   const items = sidebarItems[role];
 
   return (
-    <div className="min-h-screen bg-[#07090C] text-[#F3F4F6]">
+    <div className="min-h-screen bg-club-bg text-club-cream">
       {/* Top Navigation */}
-      <header className="fixed top-0 left-0 right-0 z-40 h-16 border-b border-club-border bg-[#07090C]/90 backdrop-blur-md">
+      <header className="fixed top-0 left-0 right-0 z-40 h-16 border-b border-club-border bg-club-bg/90 backdrop-blur-md">
         <div className="px-4 sm:px-6 lg:px-8 flex items-center justify-between h-full">
           <div className="flex items-center gap-3">
             <button
@@ -96,7 +96,7 @@ export default function PortalLayout({ role }: PortalLayoutProps) {
           <div className="flex items-center gap-4">
             <Link
               to="/"
-              className="hidden sm:inline-flex items-center gap-2 text-xs font-medium text-club-muted hover:text-club-pitch transition-colors"
+              className="hidden sm:inline-flex items-center gap-2 text-xs font-medium text-club-muted hover:text-club-red transition-colors"
             >
               View Public Site
             </Link>
@@ -104,16 +104,16 @@ export default function PortalLayout({ role }: PortalLayoutProps) {
             {/* Notifications */}
             <button className="relative p-2 rounded-lg text-club-silver hover:text-white hover:bg-club-surface transition-colors">
               <Bell className="w-5 h-5" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-club-pitch rounded-full animate-pulse" />
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-club-red rounded-full animate-pulse" />
             </button>
 
             {/* User Profile */}
             <div className="relative">
               <button
                 onClick={() => setIsUserMenuOpen((prev) => !prev)}
-                className="flex items-center gap-3 px-2 sm:px-3 py-1.5 rounded-full border border-club-border bg-club-surface text-club-silver hover:text-white hover:border-club-pitch transition-all"
+                className="flex items-center gap-3 px-2 sm:px-3 py-1.5 rounded-full border border-club-border bg-club-surface text-club-silver hover:text-white hover:border-club-red transition-all"
               >
-                <div className="w-8 h-8 rounded-full bg-club-pitch flex items-center justify-center text-club-darkest font-bold text-sm">
+                <div className="w-8 h-8 rounded-full bg-club-red flex items-center justify-center text-white font-bold text-sm">
                   VK
                 </div>
                 <div className="hidden md:block text-left">
@@ -130,11 +130,11 @@ export default function PortalLayout({ role }: PortalLayoutProps) {
                     <p className="text-xs text-club-muted">{config.label}</p>
                   </div>
                   <div className="p-2">
-                    <button className="w-full flex items-center gap-3 px-3 py-2 text-sm text-club-silver hover:bg-club-pitch hover:text-club-darkest rounded-lg transition-colors">
+                    <button className="w-full flex items-center gap-3 px-3 py-2 text-sm text-club-silver hover:bg-club-red hover:text-white rounded-lg transition-colors">
                       <Mail className="w-4 h-4" />
                       Profile
                     </button>
-                    <button className="w-full flex items-center gap-3 px-3 py-2 text-sm text-club-silver hover:bg-club-pitch hover:text-club-darkest rounded-lg transition-colors">
+                    <button className="w-full flex items-center gap-3 px-3 py-2 text-sm text-club-silver hover:bg-club-red hover:text-white rounded-lg transition-colors">
                       <Settings className="w-4 h-4" />
                       Settings
                     </button>
@@ -155,7 +155,7 @@ export default function PortalLayout({ role }: PortalLayoutProps) {
       {/* Sidebar */}
       <aside
         className={cn(
-          'fixed top-16 bottom-0 left-0 z-30 w-64 border-r border-club-border bg-[#07090C] transition-transform duration-300',
+          'fixed top-16 bottom-0 left-0 z-30 w-64 border-r border-club-border bg-club-bg transition-transform duration-300',
           isSidebarOpen ? 'translate-x-0' : '-translate-x-full',
           'lg:translate-x-0'
         )}
@@ -175,7 +175,7 @@ export default function PortalLayout({ role }: PortalLayoutProps) {
                   className={cn(
                     'flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200',
                     isActive
-                      ? 'bg-club-pitch text-club-darkest shadow-[0_0_15px_rgba(0,230,118,0.2)]'
+                      ? 'bg-club-red text-white shadow-[0_0_15px_rgba(197,30,50,0.2)]'
                       : 'text-club-silver hover:text-white hover:bg-club-surface'
                   )}
                 >

@@ -8,52 +8,45 @@ interface ClubBadgeProps {
   showText?: boolean;
 }
 
-export function ClubBadge({ 
-  className, 
-  size = 'md', 
+export function ClubBadge({
+  className,
+  size = 'md',
   variant = 'default',
-  showText = true 
+  showText = false,
 }: ClubBadgeProps) {
   const sizeClasses = {
-    sm: 'w-8 h-8',
+    sm: 'w-9 h-9',
     md: 'w-12 h-12',
     lg: 'w-16 h-16',
-    xl: 'w-20 h-20',
+    xl: 'w-28 h-28',
   };
 
-  const textSizeClasses = {
-    sm: 'text-sm',
-    md: 'text-base',
-    lg: 'text-lg',
-    xl: 'text-xl',
-  };
-
-  const variantClasses = {
-    default: 'bg-club-pitch text-club-darkest',
-    dark: 'bg-club-darkest text-club-silver',
-    light: 'bg-club-silver text-club-darkest',
+  const ringClasses = {
+    default: 'ring-club-gold/50',
+    dark: 'ring-club-gold/40',
+    light: 'ring-club-gold/30',
   };
 
   return (
-    <div className={cn(
-      'relative inline-flex items-center justify-center',
-      'font-display font-bold',
-      'rounded-full',
-      'border-2 border-club-pitch',
-      'shadow-lg',
-      sizeClasses[size],
-      variantClasses[variant],
-      className
-    )}
-    style={variant === 'default' ? {
-      background: 'linear-gradient(135deg, #00E676 0%, #00FF85 100%)',
-      boxShadow: '0 0 20px rgba(0, 230, 118, 0.4)'
-    } : undefined}
-    >
-      <span className={cn('font-mono', textSizeClasses[size])}>VK</span>
+    <div className={cn('inline-flex flex-col items-center gap-2', className)}>
+      <div
+        className={cn(
+          'relative flex items-center justify-center overflow-hidden rounded-xl',
+          'bg-white ring-1 shadow-lg shadow-black/40',
+          sizeClasses[size],
+          ringClasses[variant]
+        )}
+      >
+        <img
+          src="/vk-crest.jpg"
+          alt="VK Football Academy crest"
+          className="h-full w-full object-contain"
+          draggable={false}
+        />
+      </div>
       {showText && (
-        <span className={cn('absolute -bottom-1 -right-1', textSizeClasses.sm)}>
-          FC
+        <span className="font-display text-[10px] font-bold uppercase tracking-[0.2em] text-club-gold">
+          VK Football Academy
         </span>
       )}
     </div>

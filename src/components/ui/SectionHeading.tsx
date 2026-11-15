@@ -8,6 +8,7 @@ interface SectionHeadingProps {
   size?: 'sm' | 'md' | 'lg' | 'xl';
   centered?: boolean;
   accent?: boolean;
+  color?: 'red' | 'blue' | 'gold' | 'white';
 }
 
 export function SectionHeading({
@@ -16,7 +17,8 @@ export function SectionHeading({
   className,
   size = 'lg',
   centered = false,
-  accent = false
+  accent = false,
+  color = 'white',
 }: SectionHeadingProps) {
   const sizeClasses = {
     sm: 'text-2xl md:text-3xl',
@@ -25,35 +27,49 @@ export function SectionHeading({
     xl: 'text-5xl md:text-6xl',
   };
 
-  const accentStyles = accent ? {
-    textShadow: '0 0 30px rgba(0, 230, 118, 0.3)',
-  } : {};
+  const colorClasses = {
+    red: 'text-club-red',
+    blue: 'text-club-blue',
+    gold: 'text-club-gold',
+    white: 'text-white',
+  };
+
+  const accentStyles = accent
+    ? {
+        textShadow: '0 0 30px rgba(197, 30, 50, 0.35)',
+      }
+    : {};
 
   return (
-    <div className={cn(
-      'space-y-2',
-      centered && 'text-center',
-      className
-    )}
-    style={accent ? accentStyles : undefined}
+    <div
+      className={cn(
+        'space-y-2',
+        centered && 'text-center',
+        className
+      )}
+      style={accent ? accentStyles : undefined}
     >
-      <h2 className={cn(
-        'font-display font-bold',
-        'text-white',
-        'tracking-tight',
-        sizeClasses[size],
-        'uppercase'
-      )}>
+      <h2
+        className={cn(
+          'font-display font-bold',
+          'tracking-tight',
+          sizeClasses[size],
+          'uppercase',
+          colorClasses[color]
+        )}
+      >
         {title}
       </h2>
       {subtitle && (
-        <p className={cn(
-          'font-sans',
-          'text-club-muted',
-          'text-base md:text-lg',
-          'max-w-2xl',
-          centered && 'mx-auto'
-        )}>
+        <p
+          className={cn(
+            'font-sans',
+            'text-club-muted',
+            'text-base md:text-lg',
+            'max-w-2xl',
+            centered && 'mx-auto'
+          )}
+        >
           {subtitle}
         </p>
       )}

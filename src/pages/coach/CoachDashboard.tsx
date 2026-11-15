@@ -29,7 +29,7 @@ const CoachDashboard = () => {
         action={
           <Link
             to="/coach/training"
-            className="inline-flex items-center gap-2 rounded-xl bg-club-pitch px-5 py-2.5 text-sm font-semibold text-club-darkest transition-colors hover:bg-club-pitch-hover"
+            className="inline-flex items-center gap-2 rounded-xl bg-club-red px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-club-red-hover"
           >
             Plan Session
             <ArrowRight className="h-4 w-4" />
@@ -48,16 +48,16 @@ const CoachDashboard = () => {
         <div className="rounded-2xl border border-club-border bg-club-surface p-6">
           <div className="mb-5 flex items-center justify-between">
             <h2 className="font-display text-lg font-bold text-white">Upcoming Sessions</h2>
-            <Link to="/coach/training" className="text-xs font-medium text-club-pitch hover:underline">
+            <Link to="/coach/training" className="text-xs font-medium text-club-red hover:underline">
               View all
             </Link>
           </div>
           <div className="space-y-3">
             {data?.upcomingSessions.map((session) => (
-              <div key={session.id} className="rounded-xl border border-club-border bg-[#07090C] p-4">
+              <div key={session.id} className="rounded-xl border border-club-border bg-club-bg p-4">
                 <div className="flex items-center justify-between">
                   <p className="text-sm font-semibold text-white">{session.teamName}</p>
-                  <span className="rounded-full bg-club-pitch/15 px-3 py-1 text-xs font-medium text-club-pitch">
+                  <span className="rounded-full bg-club-red/15 px-3 py-1 text-xs font-medium text-club-red">
                     {session.type}
                   </span>
                 </div>
@@ -80,20 +80,20 @@ const CoachDashboard = () => {
         <div className="rounded-2xl border border-club-border bg-club-surface p-6">
           <div className="mb-5 flex items-center justify-between">
             <h2 className="font-display text-lg font-bold text-white">Player Development</h2>
-            <Link to="/coach/reports" className="text-xs font-medium text-club-pitch hover:underline">
+            <Link to="/coach/reports" className="text-xs font-medium text-club-red hover:underline">
               Reports
             </Link>
           </div>
           <div className="space-y-3">
             {data?.playerDevelopment.map((player) => (
-              <div key={player.playerId} className="rounded-xl border border-club-border bg-[#07090C] p-4">
+              <div key={player.playerId} className="rounded-xl border border-club-border bg-club-bg p-4">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-semibold text-white">{player.playerName}</p>
                     <p className="text-xs text-club-muted">{player.teamName}</p>
                   </div>
                   <div className="text-right">
-                    <p className="font-display text-xl font-bold text-club-pitch">
+                    <p className="font-display text-xl font-bold text-club-red">
                       {player.recentRatings.overall.toFixed(1)}
                     </p>
                     <p className="text-[11px] uppercase tracking-wider text-club-muted">Overall</p>

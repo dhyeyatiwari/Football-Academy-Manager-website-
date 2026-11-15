@@ -1,16 +1,16 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { 
-  Mail, 
-  Phone, 
-  MapPin, 
-  Instagram, 
-  Twitter, 
-  Facebook, 
+import {
+  Mail,
+  Phone,
+  MapPin,
+  Instagram,
+  Twitter,
+  Facebook,
   Linkedin,
   ArrowRight,
   Clock,
-  ShieldCheck
+  ShieldCheck,
 } from 'lucide-react';
 import { ClubBadge } from '@/components/ui/ClubBadge';
 
@@ -70,7 +70,7 @@ const socialLinks = [
 
 export function Footer() {
   return (
-    <footer className="border-t border-club-border bg-[#07090C]">
+    <footer className="border-t border-club-border bg-club-graphite">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
           {/* Brand */}
@@ -82,7 +82,9 @@ export function Footer() {
               </span>
             </div>
             <p className="text-club-muted text-sm leading-relaxed max-w-xs">
-              Elite European-standard youth development academy. Shaping the next generation of football talent through technical excellence, tactical intelligence, and unwavering discipline.
+              Elite European-standard youth development academy. Shaping the next generation of
+              football talent through technical excellence, tactical intelligence, and unwavering
+              discipline.
             </p>
             <div className="flex gap-4 mt-6">
               {socialLinks.map((link) => {
@@ -91,7 +93,7 @@ export function Footer() {
                   <a
                     key={link.name}
                     href={link.href}
-                    className="w-10 h-10 rounded-lg border border-club-border bg-club-surface flex items-center justify-center text-club-silver hover:text-club-pitch hover:border-club-pitch transition-all"
+                    className="w-10 h-10 rounded-lg border border-club-border bg-club-surface flex items-center justify-center text-club-silver hover:text-club-red hover:border-club-red transition-all"
                     aria-label={link.name}
                   >
                     <Icon className="w-5 h-5" />
@@ -130,7 +132,7 @@ export function Footer() {
                 const Icon = info.icon;
                 return (
                   <div key={info.label} className="flex items-center gap-2">
-                    <Icon className="w-4 h-4 text-club-pitch" />
+                    <Icon className="w-4 h-4 text-club-red" />
                     <div>
                       <p className="text-xs font-medium text-club-silver">{info.label}</p>
                       <p className="text-xs text-club-muted">{info.value}</p>
@@ -140,7 +142,7 @@ export function Footer() {
               })}
             </div>
             <div className="flex items-center gap-3">
-              <ShieldCheck className="w-4 h-4 text-club-pitch" />
+              <ShieldCheck className="w-4 h-4 text-club-gold" />
               <p className="text-xs text-club-muted">
                 VK Football Academy © {new Date().getFullYear()} All rights reserved.
               </p>

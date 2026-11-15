@@ -24,14 +24,14 @@ const NotFound = () => {
           <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
             <Link
               to="/"
-              className="inline-flex items-center gap-2 px-8 py-4 bg-club-pitch text-club-darkest font-bold text-lg rounded-xl hover:bg-club-pitch-hover transition-all duration-300 shadow-[0_0_20px_rgba(0,230,118,0.3)]"
+              className="inline-flex items-center gap-2 px-8 py-4 bg-club-red text-white font-bold text-lg rounded-xl hover:bg-club-red-hover transition-all duration-300 shadow-[0_0_20px_rgba(197,30,50,0.3)]"
             >
               <Home className="w-5 h-5" />
               Back to Home
             </Link>
             <Link
               to="/"
-              className="inline-flex items-center gap-2 px-8 py-4 border-2 border-club-pitch text-club-pitch font-bold text-lg rounded-xl hover:bg-club-pitch hover:text-club-darkest transition-all duration-300"
+              className="inline-flex items-center gap-2 px-8 py-4 border-2 border-club-red text-club-red font-bold text-lg rounded-xl hover:bg-club-red hover:text-white transition-all duration-300"
             >
               <ArrowLeft className="w-5 h-5" />
               Explore Academy

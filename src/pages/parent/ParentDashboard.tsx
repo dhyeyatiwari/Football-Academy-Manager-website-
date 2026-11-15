@@ -30,7 +30,7 @@ const ParentDashboard = () => {
         action={
           <Link
             to="/parent/payments"
-            className="inline-flex items-center gap-2 rounded-xl bg-club-pitch px-5 py-2.5 text-sm font-semibold text-club-darkest transition-colors hover:bg-club-pitch-hover"
+            className="inline-flex items-center gap-2 rounded-xl bg-club-red px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-club-red-hover"
           >
             Make Payment
             <ArrowRight className="h-4 w-4" />
@@ -52,9 +52,9 @@ const ParentDashboard = () => {
             <h2 className="mb-5 font-display text-lg font-bold text-white">My Children</h2>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               {data?.myChildren.map((child) => (
-                <div key={child.id} className="rounded-xl border border-club-border bg-[#07090C] p-4">
+                <div key={child.id} className="rounded-xl border border-club-border bg-club-bg p-4">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-11 w-11 items-center justify-center rounded-full bg-club-pitch text-sm font-bold text-club-darkest">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-full bg-club-red text-sm font-bold text-white">
                       {child.firstName[0]}
                       {child.lastName[0]}
                     </div>
@@ -67,7 +67,7 @@ const ParentDashboard = () => {
                   </div>
                   <div className="mt-3 flex items-center justify-between text-xs text-club-muted">
                     <span>#{child.jerseyNumber} · {child.position.join(', ')}</span>
-                    <span className="rounded-full bg-club-pitch/15 px-2 py-0.5 text-club-pitch">
+                    <span className="rounded-full bg-club-red/15 px-2 py-0.5 text-club-red">
                       {child.ageGroup}
                     </span>
                   </div>
@@ -80,16 +80,16 @@ const ParentDashboard = () => {
           <div className="rounded-2xl border border-club-border bg-club-surface p-6">
             <div className="mb-5 flex items-center justify-between">
               <h2 className="font-display text-lg font-bold text-white">Upcoming Training</h2>
-              <Link to="/parent/training" className="text-xs font-medium text-club-pitch hover:underline">
+              <Link to="/parent/training" className="text-xs font-medium text-club-red hover:underline">
                 View all
               </Link>
             </div>
             <div className="space-y-3">
               {data?.upcomingTraining.map((session) => (
-                <div key={session.id} className="rounded-xl border border-club-border bg-[#07090C] p-4">
+                <div key={session.id} className="rounded-xl border border-club-border bg-club-bg p-4">
                   <div className="flex items-center justify-between">
                     <p className="text-sm font-semibold text-white">{session.teamName}</p>
-                    <span className="rounded-full bg-club-pitch/15 px-3 py-1 text-xs font-medium text-club-pitch">
+                    <span className="rounded-full bg-club-red/15 px-3 py-1 text-xs font-medium text-club-red">
                       {session.type}
                     </span>
                   </div>
@@ -114,7 +114,7 @@ const ParentDashboard = () => {
         <div className="space-y-6">
           {/* Subscription */}
           {data?.subscription && (
-            <div className="rounded-2xl border border-club-pitch/40 bg-club-surface p-6">
+            <div className="rounded-2xl border border-club-red/40 bg-club-surface p-6">
               <p className="text-xs uppercase tracking-wider text-club-muted">Current Plan</p>
               <p className="mt-1 font-display text-2xl font-bold text-white">{data.subscription.tier}</p>
               <p className="mt-1 text-sm text-club-muted">
@@ -124,7 +124,7 @@ const ParentDashboard = () => {
                 {data.subscription.benefits.map((benefit) => (
                   <div key={benefit.id} className="flex items-center gap-2 text-xs">
                     {benefit.included ? (
-                      <CheckCircle2 className="h-4 w-4 flex-shrink-0 text-club-pitch" />
+                      <CheckCircle2 className="h-4 w-4 flex-shrink-0 text-club-red" />
                     ) : (
                       <AlertCircle className="h-4 w-4 flex-shrink-0 text-club-muted" />
                     )}
@@ -142,7 +142,7 @@ const ParentDashboard = () => {
             <h2 className="mb-4 font-display text-lg font-bold text-white">Notifications</h2>
             <div className="space-y-3">
               {data?.notifications.map((notif) => (
-                <div key={notif.id} className="rounded-xl border border-club-border bg-[#07090C] p-3">
+                <div key={notif.id} className="rounded-xl border border-club-border bg-club-bg p-3">
                   <p className="text-sm font-semibold text-white">{notif.title}</p>
                   <p className="mt-1 line-clamp-2 text-xs text-club-muted">{notif.message}</p>
                 </div>

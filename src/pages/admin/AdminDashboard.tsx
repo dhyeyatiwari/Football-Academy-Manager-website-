@@ -34,7 +34,7 @@ const AdminDashboard = () => {
         action={
           <Link
             to="/admin/players"
-            className="inline-flex items-center gap-2 rounded-xl bg-club-pitch px-5 py-2.5 text-sm font-semibold text-club-darkest transition-colors hover:bg-club-pitch-hover"
+            className="inline-flex items-center gap-2 rounded-xl bg-club-red px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-club-red-hover"
           >
             Manage Players
             <ArrowRight className="h-4 w-4" />
@@ -73,7 +73,7 @@ const AdminDashboard = () => {
         <div className="lg:col-span-2 rounded-2xl border border-club-border bg-club-surface p-6">
           <div className="mb-5 flex items-center justify-between">
             <h2 className="font-display text-lg font-bold text-white">Upcoming Fixtures</h2>
-            <Link to="/admin/matches" className="text-xs font-medium text-club-pitch hover:underline">
+            <Link to="/admin/matches" className="text-xs font-medium text-club-red hover:underline">
               View all
             </Link>
           </div>
@@ -81,7 +81,7 @@ const AdminDashboard = () => {
             {matches.map((match) => (
               <div
                 key={match.id}
-                className="flex items-center justify-between rounded-xl border border-club-border bg-[#07090C] p-4"
+                className="flex items-center justify-between rounded-xl border border-club-border bg-club-bg p-4"
               >
                 <div className="min-w-0">
                   <p className="truncate text-sm font-semibold text-white">
@@ -91,7 +91,7 @@ const AdminDashboard = () => {
                     {match.date} · {match.kickoffTime} · {match.venue}
                   </p>
                 </div>
-                <span className="ml-4 flex-shrink-0 rounded-full bg-club-pitch/15 px-3 py-1 text-xs font-medium text-club-pitch">
+                <span className="ml-4 flex-shrink-0 rounded-full bg-club-red/15 px-3 py-1 text-xs font-medium text-club-red">
                   {match.competition}
                 </span>
               </div>
@@ -104,7 +104,7 @@ const AdminDashboard = () => {
 
         <div className="rounded-2xl border border-club-border bg-club-surface p-6">
           <div className="mb-5 flex items-center gap-2">
-            <Megaphone className="h-4 w-4 text-club-pitch" />
+            <Megaphone className="h-4 w-4 text-club-red" />
             <h2 className="font-display text-lg font-bold text-white">Announcements</h2>
           </div>
           <div className="space-y-4">
@@ -112,7 +112,7 @@ const AdminDashboard = () => {
               <div key={ann.id} className="border-b border-club-border pb-4 last:border-0 last:pb-0">
                 <p className="text-sm font-semibold text-white">{ann.title}</p>
                 <p className="mt-1 line-clamp-2 text-xs text-club-muted">{ann.content}</p>
-                <p className="mt-2 text-[11px] uppercase tracking-wider text-club-pitch">
+                <p className="mt-2 text-[11px] uppercase tracking-wider text-club-red">
                   {ann.priority} priority
                 </p>
               </div>
@@ -123,7 +123,7 @@ const AdminDashboard = () => {
 
       <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="flex items-center gap-4 rounded-2xl border border-club-border bg-club-surface p-6">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-club-pitch/15 text-club-pitch">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-club-red/15 text-club-red">
             <UserCheck className="h-6 w-6" />
           </div>
           <div>
@@ -132,7 +132,7 @@ const AdminDashboard = () => {
           </div>
         </div>
         <div className="flex items-center gap-4 rounded-2xl border border-club-border bg-club-surface p-6">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-club-pitch/15 text-club-pitch">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-club-red/15 text-club-red">
             <Activity className="h-6 w-6" />
           </div>
           <div>
