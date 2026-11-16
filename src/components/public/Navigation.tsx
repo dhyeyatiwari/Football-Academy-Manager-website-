@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   Menu,
   X,
@@ -8,12 +8,14 @@ import {
   Trophy,
   Calendar,
   Play,
-  ArrowRight,
-  Login,
-  UserCircle,
-} from 'lucide-react';
+    ArrowRight,
+    LogIn,
+    UserCircle,
+    LogOut,
+  } from 'lucide-react';
 import { ClubBadge } from '@/components/ui/ClubBadge';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
 
 const navItems = [
   { name: 'Home', href: '/', icon: Play },
@@ -24,14 +26,29 @@ const navItems = [
 ];
 
 const portalItems = [
-  { name: 'Admin Portal', href: '/admin', icon: Shield },
-  { name: 'Coach Portal', href: '/coach', icon: Users },
-  { name: 'Parent Portal', href: '/parent', icon: UserCircle },
+  { name: 'Admin Portal', href: '/admin', icon: Shield, role: 'admin' as const },
+  { name: 'Coach Portal', href: '/coach', icon: Users, role: 'coach' as const },
+  { name: 'Parent Portal', href: '/parent', icon: UserCircle, role: 'parent' as const },
 ];
 
 export function Navigation() {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, isAuthenticated, logout } = useAuth();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
+
+  const getPortalHref = () => {
+    if (!isAuthenticated) return '/login';
+    if (user?.role === 'admin') return '/admin';
+    if (user?.role === 'coach') return '/coach';
+    if (user?.role === 'parent') return '/parent';
+    return '/login';
+  };
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 border-b border-club-border bg-club-bg/80 backdrop-blur-md">
@@ -70,11 +87,32 @@ export function Navigation() {
 
             {/* Portal Switcher */}
             <div className="flex items-center gap-2">
-              <button className="flex items-center gap-2 px-4 py-2 rounded-lg border border-club-border bg-club-surface text-club-silver hover:text-white hover:border-club-red transition-all">
-                <UserCircle className="w-4 h-4" />
-                <span className="font-medium text-sm">Portal</span>
-                <ArrowRight className="w-3 h-3 ml-1" />
-              </button>
+              {isAuthenticated ? (
+                <div className="flex items-center gap-3">
+                  <Link
+                    to={getPortalHref()}
+                    className="flex items-center gap-2 px-4 py-2 rounded-lg border border-club-border bg-club-surface text-club-silver hover:text-white hover:border-club-red transition-all"
+                  >
+                    <UserCircle className="w-4 h-4" />
+                    <span className="font-medium text-sm">{user?.fullName?.split(' ')[0]}'s Portal</span>
+                  </Link>
+                  <button
+                    onClick={handleLogout}
+                    className="flex items-center gap-2 px-4 py-2 rounded-lg border border-club-border bg-club-surface text-club-silver hover:text-white hover:border-club-red transition-all"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    <span className="font-medium text-sm">Sign Out</span>
+                  </button>
+                </div>
+              ) : (
+                <Link
+                  to="/login"
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg border border-club-border bg-club-surface text-club-silver hover:text-white hover:border-club-red transition-all"
+                >
+                  <LogIn className="w-4 h-4" />
+                  <span className="font-medium text-sm">Portal Login</span>
+                </Link>
+              )}
             </div>
           </div>
 
@@ -141,6 +179,16 @@ export function Navigation() {
                   </Link>
                 );
               })}
+
+              {isAuthenticated && (
+                <button
+                  onClick={handleLogout}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-destructive hover:bg-destructive/10 transition-colors mt-4"
+                >
+                  <LogOut className="w-5 h-5" />
+                  <span className="font-medium">Sign Out</span>
+                </button>
+              )}
             </div>
           </div>
         </div>

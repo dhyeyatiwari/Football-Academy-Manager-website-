@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { PageHeader } from '@/components/portal/PageHeader';
 import { StatCard } from '@/components/portal/StatCard';
-import { mockDataService } from '@/services/mockData';
+import { dataService } from '@/services/dataService';
 import type { DashboardMetrics, Announcement, Match } from '@/types/domain';
 
 const AdminDashboard = () => {
@@ -21,9 +21,9 @@ const AdminDashboard = () => {
   const [matches, setMatches] = useState<Match[]>([]);
 
   useEffect(() => {
-    mockDataService.getDashboardMetrics().then(setMetrics);
-    mockDataService.getAnnouncements().then(setAnnouncements);
-    mockDataService.getUpcomingMatches().then(setMatches);
+    setMetrics(dataService.getDashboardMetrics());
+    setAnnouncements(dataService.getAnnouncements());
+    setMatches(dataService.getUpcomingMatches());
   }, []);
 
   return (

@@ -397,6 +397,177 @@ export interface PlayerDevelopmentSummary {
 }
 
 // ============================================
+// SESSION PLANS
+// ============================================
+
+export type SessionPlanCategory =
+  | 'Technical'
+  | 'Tactical'
+  | 'Physical'
+  | 'Goalkeeping'
+  | 'Match Prep'
+  | 'Recovery'
+  | 'Video Analysis';
+
+export interface SessionPlan {
+  id: string;
+  trainingSessionId: string;
+  coachId: string;
+  coachName: string;
+  teamId: string;
+  teamName: string;
+  title: string;
+  description?: string;
+  category: SessionPlanCategory;
+  objectives?: string[];
+  warmUp?: string[];
+  technicalDrills?: string[];
+  tacticalActivities?: string[];
+  smallSidedGames?: string[];
+  physicalConditioning?: string[];
+  coolDown?: string[];
+  equipmentRequired?: string[];
+  coachingPoints?: string[];
+  totalDuration?: number; // minutes
+  postSessionObservations?: string;
+  fileUrl?: string;
+  fileName?: string;
+  fileType?: 'pdf' | 'docx' | 'image' | 'structured';
+  fileSize?: number;
+  aiSummary?: string;
+  aiExtractedDrills?: string[];
+  aiDrillDurations?: Record<string, number>;
+  aiCoachingPoints?: string[];
+  aiSuggestions?: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ============================================
+// ATTENDANCE
+// ============================================
+
+export type AttendanceStatus = 'Present' | 'Absent' | 'Late' | 'Excused';
+
+export interface Attendance {
+  id: string;
+  trainingSessionId: string;
+  playerId: string;
+  playerName: string;
+  status: AttendanceStatus;
+  checkInTime?: string;
+  markedBy: string;
+  markedByName: string;
+  markedAt: string;
+  notes?: string;
+}
+
+// ============================================
+// PLAYER DEVELOPMENT REPORTS
+// ============================================
+
+export type DevelopmentArea = 'Technical' | 'Tactical' | 'Physical' | 'Psychological' | 'Attitude' | 'Overall';
+
+export interface PlayerReport {
+  id: string;
+  playerId: string;
+  playerName: string;
+  coachId: string;
+  coachName: string;
+  teamId: string;
+  teamName: string;
+  assessmentDate: string;
+  ratings: {
+    technical: number; // 1-10
+    tactical: number;
+    physical: number;
+    psychological: number;
+    attitude: number;
+    overall: number;
+  };
+  strengths: string[];
+  weaknesses: string[];
+  developmentObjectives: string[];
+  observations: string[];
+  coachRecommendations: string[];
+  previousReportId?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ============================================
+// SESSION OBSERVATIONS
+// ============================================
+
+export interface SessionObservation {
+  id: string;
+  trainingSessionId: string;
+  sessionPlanId?: string;
+  coachId: string;
+  coachName: string;
+  teamId: string;
+  playerId?: string;
+  playerName?: string;
+  observationType: 'Planned vs Actual' | 'Player Performance' | 'Team Performance' | 'General';
+  content: string;
+  rating?: number; // 1-10
+  createdAt: string;
+}
+
+// ============================================
+// FEE RECORDS
+// ============================================
+
+export type FeeStatus = 'Paid' | 'Pending' | 'Overdue' | 'Refunded';
+
+export interface FeeRecord {
+  id: string;
+  playerId: string;
+  playerName: string;
+  parentId: string;
+  parentName: string;
+  amount: number;
+  currency: 'EUR' | 'GBP' | 'USD';
+  status: FeeStatus;
+  dueDate: string;
+  paidDate?: string;
+  method?: 'Card' | 'Bank Transfer' | 'Direct Debit' | 'Cash';
+  transactionId?: string;
+  description: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ============================================
+// PARENTS & COACHES (extended profiles)
+// ============================================
+
+export interface Parent {
+  id: string;
+  userId: string;
+  fullName: string;
+  email: string;
+  phone?: string;
+  childIds: string[];
+  childNames: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Coach {
+  id: string;
+  userId: string;
+  fullName: string;
+  email: string;
+  phone?: string;
+  licenseLevel?: 'UEFA Pro' | 'UEFA A' | 'UEFA B' | 'UEFA C' | 'FA Level 1' | 'FA Level 2' | 'Other';
+  teamIds: string[];
+  teamNames: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ============================================
 // API RESPONSE TYPES
 // ============================================
 

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Outlet, useLocation, Link } from 'react-router-dom';
+import { Outlet, useLocation, Link, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
   Users,
@@ -15,9 +15,15 @@ import {
   Play,
   Menu,
   X,
+  ClipboardList,
+  UserCheck,
+  TrendingUp,
+  CreditCard,
+  Megaphone,
 } from 'lucide-react';
 import { ClubBadge } from '@/components/ui/ClubBadge';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface PortalLayoutProps {
   role: 'admin' | 'coach' | 'parent';
@@ -35,22 +41,25 @@ const sidebarItems: Record<
 > = {
   admin: [
     { label: 'Dashboard', href: '/admin', icon: LayoutDashboard },
-    { label: 'Teams', href: '/admin/teams', icon: Users },
     { label: 'Players', href: '/admin/players', icon: UserCircle },
-    { label: 'Matches', href: '/admin/matches', icon: Calendar },
     { label: 'Coaches', href: '/admin/coaches', icon: Users },
+    { label: 'Teams', href: '/admin/teams', icon: Users },
     { label: 'Parents', href: '/admin/parents', icon: UserCircle },
-    { label: 'Subscriptions', href: '/admin/subscriptions', icon: Shield },
-    { label: 'Facilities', href: '/admin/facilities', icon: Trophy },
+    { label: 'Training', href: '/admin/training', icon: Calendar },
+    { label: 'Attendance', href: '/admin/attendance', icon: UserCheck },
+    { label: 'Matches', href: '/admin/matches', icon: Trophy },
+    { label: 'Fees', href: '/admin/fees', icon: CreditCard },
+    { label: 'Announcements', href: '/admin/announcements', icon: Megaphone },
     { label: 'Settings', href: '/admin/settings', icon: Settings },
   ],
   coach: [
     { label: 'Dashboard', href: '/coach', icon: LayoutDashboard },
     { label: 'My Teams', href: '/coach/teams', icon: Users },
     { label: 'Training', href: '/coach/training', icon: Calendar },
+    { label: 'Session Plans', href: '/coach/session-plans', icon: ClipboardList },
     { label: 'Matches', href: '/coach/matches', icon: Trophy },
-    { label: 'Player Reports', href: '/coach/reports', icon: Mail },
-    { label: 'Attendance', href: '/coach/attendance', icon: Calendar },
+    { label: 'Attendance', href: '/coach/attendance', icon: UserCheck },
+    { label: 'Player Development', href: '/coach/reports', icon: TrendingUp },
     { label: 'Settings', href: '/coach/settings', icon: Settings },
   ],
   parent: [
@@ -68,9 +77,16 @@ export default function PortalLayout({ role }: PortalLayoutProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
 
   const config = portalConfig[role];
   const items = sidebarItems[role];
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
 
   return (
     <div className="min-h-screen bg-club-bg text-club-cream">
@@ -114,10 +130,10 @@ export default function PortalLayout({ role }: PortalLayoutProps) {
                 className="flex items-center gap-3 px-2 sm:px-3 py-1.5 rounded-full border border-club-border bg-club-surface text-club-silver hover:text-white hover:border-club-red transition-all"
               >
                 <div className="w-8 h-8 rounded-full bg-club-red flex items-center justify-center text-white font-bold text-sm">
-                  VK
+                  {user?.fullName?.split(' ').map(n => n[0]).join('') || 'VK'}
                 </div>
                 <div className="hidden md:block text-left">
-                  <p className="text-sm font-medium text-white leading-tight">Portal User</p>
+                  <p className="text-sm font-medium text-white leading-tight">{user?.fullName || 'Portal User'}</p>
                   <p className="text-xs text-club-muted leading-tight">{config.label}</p>
                 </div>
                 <ChevronDown className="w-4 h-4 text-club-muted" />
@@ -126,8 +142,8 @@ export default function PortalLayout({ role }: PortalLayoutProps) {
               {isUserMenuOpen && (
                 <div className="absolute right-0 mt-2 w-52 bg-club-surface border border-club-border rounded-xl shadow-2xl z-50 overflow-hidden">
                   <div className="p-4 border-b border-club-border">
-                    <p className="text-sm font-medium text-white">Portal User</p>
-                    <p className="text-xs text-club-muted">{config.label}</p>
+                    <p className="text-sm font-medium text-white">{user?.fullName || 'Portal User'}</p>
+                    <p className="text-xs text-club-muted">{user?.email || 'user@vkfootball.academy'}</p>
                   </div>
                   <div className="p-2">
                     <button className="w-full flex items-center gap-3 px-3 py-2 text-sm text-club-silver hover:bg-club-red hover:text-white rounded-lg transition-colors">
@@ -139,7 +155,10 @@ export default function PortalLayout({ role }: PortalLayoutProps) {
                       Settings
                     </button>
                     <div className="border-t border-club-border mt-2 pt-2">
-                      <button className="w-full flex items-center gap-3 px-3 py-2 text-sm text-destructive hover:bg-destructive/10 rounded-lg transition-colors">
+                      <button
+                        onClick={handleLogout}
+                        className="w-full flex items-center gap-3 px-3 py-2 text-sm text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
+                      >
                         <LogOut className="w-4 h-4" />
                         Sign Out
                       </button>
@@ -187,7 +206,10 @@ export default function PortalLayout({ role }: PortalLayoutProps) {
           </nav>
 
           <div className="p-4 border-t border-club-border">
-            <button className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors">
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors"
+            >
               <LogOut className="w-4 h-4" />
               Sign Out
             </button>
