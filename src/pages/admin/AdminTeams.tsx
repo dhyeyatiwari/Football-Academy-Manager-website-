@@ -18,16 +18,52 @@ import { PageHeader } from '@/components/portal/PageHeader';
 import { StatCard } from '@/components/portal/StatCard';
 import { EmptyState } from '@/components/portal/EmptyState';
 import { dataService } from '@/services/dataService';
-import type { Team } from '@/types/domain';
+import { useAuth } from '@/contexts/AuthContext';
+import { showSuccess, showError } from '@/utils/toast';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import type { Team, AgeGroup } from '@/types/domain';
 
 const AdminTeams = () => {
+  const { user } = useAuth();
   const [teams, setTeams] = useState<Team[]>([]);
+  const [coaches, setCoaches] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingTeam, setEditingTeam] = useState<Team | null>(null);
+  const [formData, setFormData] = useState({
+    name: '',
+    ageGroup: 'U12' as AgeGroup,
+    category: 'Academy',
+    coachId: '',
+    maxPlayers: '25',
+    trainingDays: ['Monday', 'Wednesday'],
+    trainingTime: '',
+    pitchLocation: '',
+    season: '2024/25',
+    isActive: true,
+  });
 
   useEffect(() => {
     setTeams(dataService.getTeams());
+    setCoaches(dataService.getCoaches());
     setLoading(false);
   }, []);
 
@@ -38,10 +74,90 @@ const AdminTeams = () => {
     return matchesSearch && matchesCategory;
   });
 
+  const handleOpenDialog = (team?: Team) => {
+    if (team) {
+      setEditingTeam(team);
+      setFormData({
+        name: team.name,
+        ageGroup: team.ageGroup,
+        category: team.category,
+        coachId: team.coachIds[0] || '',
+        maxPlayers: team.maxPlayers.toString(),
+        trainingDays: team.trainingDays,
+        trainingTime: team.trainingTime || '',
+        pitchLocation: team.pitchLocation || '',
+        season: team.season,
+        isActive: team.isActive,
+      });
+    } else {
+      setEditingTeam(null);
+      setFormData({
+        name: '',
+        ageGroup: 'U12',
+        category: 'Academy',
+        coachId: '',
+        maxPlayers: '25',
+        trainingDays: ['Monday', 'Wednesday'],
+        trainingTime: '',
+        pitchLocation: '',
+        season: '2024/25',
+        isActive: true,
+      });
+    }
+    setIsDialogOpen(true);
+  };
+
+  const handleCloseDialog = () => {
+    setIsDialogOpen(false);
+    setEditingTeam(null);
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!formData.name.trim()) {
+      showError('Please enter a team name');
+      return;
+    }
+
+    const coach = coaches.find((c) => c.id === formData.coachId);
+
+    const team: Team = {
+      id: editingTeam?.id || `team_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      name: formData.name,
+      ageGroup: formData.ageGroup,
+      category: formData.category,
+      coachIds: formData.coachId ? [formData.coachId] : [],
+      coachName: coach?.fullName || 'Unassigned',
+      currentPlayers: editingTeam?.currentPlayers || 0,
+      maxPlayers: parseInt(formData.maxPlayers),
+      trainingDays: formData.trainingDays,
+      trainingTime: formData.trainingTime || undefined,
+      pitchLocation: formData.pitchLocation || undefined,
+      season: formData.season,
+      isActive: formData.isActive,
+      createdAt: editingTeam?.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    dataService.saveTeam(team);
+
+    if (editingTeam) {
+      setTeams((prev) => prev.map((t) => (t.id === team.id ? team : t)));
+      showSuccess('Team updated successfully');
+    } else {
+      setTeams((prev) => [...prev, team]);
+      showSuccess('Team added successfully');
+    }
+
+    handleCloseDialog();
+  };
+
   const handleDelete = (id: string) => {
     if (confirm('Are you sure you want to delete this team?')) {
-      // In a real app, this would call dataService.deleteTeam
+      dataService.deleteTeam(id);
       setTeams((prev) => prev.filter((t) => t.id !== id));
+      showSuccess('Team deleted successfully');
     }
   };
 
@@ -63,7 +179,7 @@ const AdminTeams = () => {
         description="Manage all academy teams and their configurations."
         action={
           <button
-            onClick={() => alert('Add team form would go here')}
+            onClick={() => handleOpenDialog()}
             className="inline-flex items-center gap-2 rounded-xl bg-club-red px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-club-red-hover"
           >
             <Plus className="h-4 w-4" />
@@ -172,14 +288,14 @@ const AdminTeams = () => {
 
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => alert(`View team ${team.id}`)}
+                  onClick={() => handleOpenDialog(team)}
                   className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-club-surface/50 px-3 py-2 text-xs font-medium text-club-silver hover:bg-club-surface hover:text-white transition-colors"
                 >
                   <Eye className="h-3.5 w-3.5" />
                   View
                 </button>
                 <button
-                  onClick={() => alert(`Edit team ${team.id}`)}
+                  onClick={() => handleOpenDialog(team)}
                   className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-club-surface/50 px-3 py-2 text-xs font-medium text-club-silver hover:bg-club-surface hover:text-white transition-colors"
                 >
                   <Edit3 className="h-3.5 w-3.5" />
@@ -197,6 +313,175 @@ const AdminTeams = () => {
           ))
         )}
       </div>
+
+      {/* Create/Edit Team Dialog */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{editingTeam ? 'Edit Team' : 'Add Team'}</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Team Name *</Label>
+              <Input
+                id="name"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                placeholder="e.g., U12 Academy Blue"
+                required
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="ageGroup">Age Group *</Label>
+                <Select
+                  value={formData.ageGroup}
+                  onValueChange={(value) => setFormData({ ...formData, ageGroup: value as AgeGroup })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(['U6', 'U7', 'U8', 'U9', 'U10', 'U11', 'U12', 'U13', 'U14', 'U15', 'U16', 'U17', 'U18', 'U19', 'U21', 'Senior'] as AgeGroup[]).map((age) => (
+                      <SelectItem key={age} value={age}>{age}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="category">Category</Label>
+                <Select
+                  value={formData.category}
+                  onValueChange={(value) => setFormData({ ...formData, category: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Academy">Academy</SelectItem>
+                    <SelectItem value="Development">Development</SelectItem>
+                    <SelectItem value="Elite">Elite</SelectItem>
+                    <SelectItem value="Pro Pathway">Pro Pathway</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="coachId">Coach</Label>
+                <Select
+                  value={formData.coachId}
+                  onValueChange={(value) => setFormData({ ...formData, coachId: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select coach" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Unassigned</SelectItem>
+                    {coaches.map((coach) => (
+                      <SelectItem key={coach.id} value={coach.id}>
+                        {coach.fullName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="maxPlayers">Max Players</Label>
+                <Input
+                  id="maxPlayers"
+                  type="number"
+                  value={formData.maxPlayers}
+                  onChange={(e) => setFormData({ ...formData, maxPlayers: e.target.value })}
+                  placeholder="25"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="trainingTime">Training Time</Label>
+                <Input
+                  id="trainingTime"
+                  value={formData.trainingTime}
+                  onChange={(e) => setFormData({ ...formData, trainingTime: e.target.value })}
+                  placeholder="e.g., 17:00-18:30"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="pitchLocation">Pitch Location</Label>
+                <Input
+                  id="pitchLocation"
+                  value={formData.pitchLocation}
+                  onChange={(e) => setFormData({ ...formData, pitchLocation: e.target.value })}
+                  placeholder="e.g., Main Pitch A"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Training Days</Label>
+              <div className="flex flex-wrap gap-2">
+                {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map((day) => (
+                  <label key={day} className="inline-flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.trainingDays.includes(day)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setFormData({ ...formData, trainingDays: [...formData.trainingDays, day] });
+                        } else {
+                          setFormData({ ...formData, trainingDays: formData.trainingDays.filter((d) => d !== day) });
+                        }
+                      }}
+                      className="rounded border-club-border bg-club-bg text-club-red focus:ring-club-red"
+                    />
+                    <span className="text-sm text-club-silver">{day.slice(0, 3)}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="season">Season</Label>
+                <Input
+                  id="season"
+                  value={formData.season}
+                  onChange={(e) => setFormData({ ...formData, season: e.target.value })}
+                  placeholder="2024/25"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="isActive">Status</Label>
+                <Select
+                  value={formData.isActive ? 'active' : 'inactive'}
+                  onValueChange={(value) => setFormData({ ...formData, isActive: value === 'active' })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={handleCloseDialog}>
+                Cancel
+              </Button>
+              <Button type="submit" className="bg-club-red hover:bg-club-red-hover">
+                {editingTeam ? 'Update Team' : 'Add Team'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

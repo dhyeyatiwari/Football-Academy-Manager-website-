@@ -20,13 +20,42 @@ import { PageHeader } from '@/components/portal/PageHeader';
 import { StatCard } from '@/components/portal/StatCard';
 import { EmptyState } from '@/components/portal/EmptyState';
 import { dataService } from '@/services/dataService';
+import { useAuth } from '@/contexts/AuthContext';
+import { showSuccess, showError } from '@/utils/toast';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import type { Coach, Team } from '@/types/domain';
 
 const AdminCoaches = () => {
+  const { user } = useAuth();
   const [coaches, setCoaches] = useState<Coach[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingCoach, setEditingCoach] = useState<Coach | null>(null);
+  const [formData, setFormData] = useState({
+    fullName: '',
+    email: '',
+    phone: '',
+    licenseLevel: 'UEFA C' as Coach['licenseLevel'],
+    teamIds: [] as string[],
+  });
 
   useEffect(() => {
     setCoaches(dataService.getCoaches());
@@ -40,10 +69,73 @@ const AdminCoaches = () => {
     return matchesSearch;
   });
 
+  const handleOpenDialog = (coach?: Coach) => {
+    if (coach) {
+      setEditingCoach(coach);
+      setFormData({
+        fullName: coach.fullName,
+        email: coach.email,
+        phone: coach.phone || '',
+        licenseLevel: coach.licenseLevel || 'UEFA C',
+        teamIds: coach.teamIds,
+      });
+    } else {
+      setEditingCoach(null);
+      setFormData({
+        fullName: '',
+        email: '',
+        phone: '',
+        licenseLevel: 'UEFA C',
+        teamIds: [],
+      });
+    }
+    setIsDialogOpen(true);
+  };
+
+  const handleCloseDialog = () => {
+    setIsDialogOpen(false);
+    setEditingCoach(null);
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!formData.fullName.trim() || !formData.email.trim()) {
+      showError('Please fill in all required fields');
+      return;
+    }
+
+    const coach: Coach = {
+      id: editingCoach?.id || `coach_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      userId: editingCoach?.userId || `user_${Date.now()}`,
+      fullName: formData.fullName,
+      email: formData.email,
+      phone: formData.phone || undefined,
+      licenseLevel: formData.licenseLevel,
+      teamIds: formData.teamIds,
+      teamNames: formData.teamIds.map((id) => teams.find((t) => t.id === id)?.name || ''),
+      createdAt: editingCoach?.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    dataService.saveCoach(coach);
+
+    if (editingCoach) {
+      setCoaches((prev) => prev.map((c) => (c.id === coach.id ? coach : c)));
+      showSuccess('Coach updated successfully');
+    } else {
+      setCoaches((prev) => [...prev, coach]);
+      showSuccess('Coach added successfully');
+    }
+
+    handleCloseDialog();
+  };
+
   const handleDelete = (id: string) => {
     if (confirm('Are you sure you want to delete this coach?')) {
-      // In a real app, this would call dataService.deleteCoach
+      dataService.deleteCoach(id);
       setCoaches((prev) => prev.filter((c) => c.id !== id));
+      showSuccess('Coach deleted successfully');
     }
   };
 
@@ -65,7 +157,7 @@ const AdminCoaches = () => {
         description="Manage academy coaching staff and their assignments."
         action={
           <button
-            onClick={() => alert('Add coach form would go here')}
+            onClick={() => handleOpenDialog()}
             className="inline-flex items-center gap-2 rounded-xl bg-club-red px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-club-red-hover"
           >
             <Plus className="h-4 w-4" />
@@ -162,14 +254,14 @@ const AdminCoaches = () => {
 
                 <div className="flex items-center gap-2">
                   <button
-                    onClick={() => alert(`View coach ${coach.id}`)}
+                    onClick={() => handleOpenDialog(coach)}
                     className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-club-surface/50 px-3 py-2 text-xs font-medium text-club-silver hover:bg-club-surface hover:text-white transition-colors"
                   >
                     <Eye className="h-3.5 w-3.5" />
                     View
                   </button>
                   <button
-                    onClick={() => alert(`Edit coach ${coach.id}`)}
+                    onClick={() => handleOpenDialog(coach)}
                     className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-club-surface/50 px-3 py-2 text-xs font-medium text-club-silver hover:bg-club-surface hover:text-white transition-colors"
                   >
                     <Edit3 className="h-3.5 w-3.5" />
@@ -188,6 +280,102 @@ const AdminCoaches = () => {
           })
         )}
       </div>
+
+      {/* Create/Edit Coach Dialog */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{editingCoach ? 'Edit Coach' : 'Add Coach'}</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="fullName">Full Name *</Label>
+              <Input
+                id="fullName"
+                value={formData.fullName}
+                onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                placeholder="Coach full name"
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="email">Email *</Label>
+              <Input
+                id="email"
+                type="email"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                placeholder="coach@example.com"
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="phone">Phone</Label>
+              <Input
+                id="phone"
+                value={formData.phone}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                placeholder="+44 7700 900123"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="licenseLevel">License Level</Label>
+              <Select
+                value={formData.licenseLevel}
+                onValueChange={(value) => setFormData({ ...formData, licenseLevel: value as Coach['licenseLevel'] })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="UEFA Pro">UEFA Pro</SelectItem>
+                  <SelectItem value="UEFA A">UEFA A</SelectItem>
+                  <SelectItem value="UEFA B">UEFA B</SelectItem>
+                  <SelectItem value="UEFA C">UEFA C</SelectItem>
+                  <SelectItem value="FA Level 1">FA Level 1</SelectItem>
+                  <SelectItem value="FA Level 2">FA Level 2</SelectItem>
+                  <SelectItem value="Other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Assigned Teams</Label>
+              <div className="space-y-2">
+                {teams.map((team) => (
+                  <label key={team.id} className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.teamIds.includes(team.id)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setFormData({ ...formData, teamIds: [...formData.teamIds, team.id] });
+                        } else {
+                          setFormData({ ...formData, teamIds: formData.teamIds.filter((id) => id !== team.id) });
+                        }
+                      }}
+                      className="rounded border-club-border bg-club-bg text-club-red focus:ring-club-red"
+                    />
+                    <span className="text-sm text-club-silver">{team.name} ({team.ageGroup})</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={handleCloseDialog}>
+                Cancel
+              </Button>
+              <Button type="submit" className="bg-club-red hover:bg-club-red-hover">
+                {editingCoach ? 'Update Coach' : 'Add Coach'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

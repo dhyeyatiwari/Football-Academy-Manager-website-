@@ -11,20 +11,73 @@ import {
   Eye,
   UserPlus,
   Download,
+  Calendar,
+  MapPin,
 } from 'lucide-react';
 import { PageHeader } from '@/components/portal/PageHeader';
 import { StatCard } from '@/components/portal/StatCard';
 import { EmptyState } from '@/components/portal/EmptyState';
 import { dataService } from '@/services/dataService';
-import type { Player, Team } from '@/types/domain';
+import { useAuth } from '@/contexts/AuthContext';
+import { showSuccess, showError } from '@/utils/toast';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import type { Player, Team, AgeGroup, PlayerPosition } from '@/types/domain';
 
 const AdminPlayers = () => {
+  const { user } = useAuth();
   const [players, setPlayers] = useState<Player[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTeam, setSelectedTeam] = useState<string>('all');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingPlayer, setEditingPlayer] = useState<Player | null>(null);
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    dateOfBirth: '',
+    ageGroup: 'U12' as AgeGroup,
+    position: ['CM'] as PlayerPosition[],
+    preferredFoot: 'Right' as 'Left' | 'Right' | 'Both',
+    height: '',
+    weight: '',
+    teamId: '',
+    parentIds: [] as string[],
+    emergencyContact: {
+      name: '',
+      relationship: '',
+      phone: '',
+      email: '',
+    },
+    medicalInfo: {
+      allergies: '',
+      conditions: '',
+      medications: '',
+      doctorName: '',
+      doctorPhone: '',
+      insuranceProvider: '',
+      insuranceNumber: '',
+    },
+    jerseyNumber: '',
+    isActive: true,
+  });
 
   useEffect(() => {
     setPlayers(dataService.getPlayers());
@@ -41,10 +94,121 @@ const AdminPlayers = () => {
     return matchesSearch && matchesTeam && matchesStatus;
   });
 
+  const handleOpenDialog = (player?: Player) => {
+    if (player) {
+      setEditingPlayer(player);
+      setFormData({
+        firstName: player.firstName,
+        lastName: player.lastName,
+        dateOfBirth: player.dateOfBirth,
+        ageGroup: player.ageGroup,
+        position: player.position,
+        preferredFoot: player.preferredFoot,
+        height: player.height?.toString() || '',
+        weight: player.weight?.toString() || '',
+        teamId: player.teamId || '',
+        parentIds: player.parentIds,
+        emergencyContact: player.emergencyContact,
+        medicalInfo: player.medicalInfo || {
+          allergies: '',
+          conditions: '',
+          medications: '',
+          doctorName: '',
+          doctorPhone: '',
+          insuranceProvider: '',
+          insuranceNumber: '',
+        },
+        jerseyNumber: player.jerseyNumber?.toString() || '',
+        isActive: player.isActive,
+      });
+    } else {
+      setEditingPlayer(null);
+      setFormData({
+        firstName: '',
+        lastName: '',
+        dateOfBirth: '',
+        ageGroup: 'U12',
+        position: ['CM'],
+        preferredFoot: 'Right',
+        height: '',
+        weight: '',
+        teamId: '',
+        parentIds: [],
+        emergencyContact: {
+          name: '',
+          relationship: '',
+          phone: '',
+          email: '',
+        },
+        medicalInfo: {
+          allergies: '',
+          conditions: '',
+          medications: '',
+          doctorName: '',
+          doctorPhone: '',
+          insuranceProvider: '',
+          insuranceNumber: '',
+        },
+        jerseyNumber: '',
+        isActive: true,
+      });
+    }
+    setIsDialogOpen(true);
+  };
+
+  const handleCloseDialog = () => {
+    setIsDialogOpen(false);
+    setEditingPlayer(null);
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!formData.firstName.trim() || !formData.lastName.trim() || !formData.dateOfBirth) {
+      showError('Please fill in all required fields');
+      return;
+    }
+
+    const player: Player = {
+      id: editingPlayer?.id || `player_${Date.now()}_${Math.random().toString(36).substr(2, 9)},
+      userId: editingPlayer?.userId,
+      firstName: formData.firstName,
+      lastName: formData.lastName,
+      dateOfBirth: formData.dateOfBirth,
+      ageGroup: formData.ageGroup,
+      position: formData.position,
+      preferredFoot: formData.preferredFoot,
+      height: formData.height ? parseInt(formData.height) : undefined,
+      weight: formData.weight ? parseInt(formData.weight) : undefined,
+      teamId: formData.teamId || undefined,
+      teamName: formData.teamId ? teams.find((t) => t.id === formData.teamId)?.name : undefined,
+      parentIds: formData.parentIds,
+      parentNames: formData.parentIds.map((id) => dataService.getParentById(id)?.fullName || ''),
+      emergencyContact: formData.emergencyContact,
+      medicalInfo: formData.medicalInfo,
+      joinDate: editingPlayer?.joinDate || new Date().toISOString(),
+      isActive: formData.isActive,
+      jerseyNumber: formData.jerseyNumber ? parseInt(formData.jerseyNumber) : undefined,
+    };
+
+    dataService.savePlayer(player);
+
+    if (editingPlayer) {
+      setPlayers((prev) => prev.map((p) => (p.id === player.id ? player : p)));
+      showSuccess('Player updated successfully');
+    } else {
+      setPlayers((prev) => [...prev, player]);
+      showSuccess('Player added successfully');
+    }
+
+    handleCloseDialog();
+  };
+
   const handleDelete = (id: string) => {
     if (confirm('Are you sure you want to delete this player?')) {
-      // In a real app, this would call dataService.deletePlayer
+      dataService.deletePlayer(id);
       setPlayers((prev) => prev.filter((p) => p.id !== id));
+      showSuccess('Player deleted successfully');
     }
   };
 
@@ -66,7 +230,7 @@ const AdminPlayers = () => {
         description="Manage all academy players and their profiles."
         action={
           <button
-            onClick={() => alert('Add player form would go here')}
+            onClick={() => handleOpenDialog()}
             className="inline-flex items-center gap-2 rounded-xl bg-club-red px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-club-red-hover"
           >
             <Plus className="h-4 w-4" />
@@ -176,14 +340,14 @@ const AdminPlayers = () => {
                       <td className="p-4">
                         <div className="flex items-center gap-2">
                           <button
-                            onClick={() => alert(`View player ${player.id}`)}
+                            onClick={() => handleOpenDialog(player)}
                             className="p-2 rounded-lg text-club-silver hover:text-white hover:bg-club-surface transition-colors"
                             title="View"
                           >
                             <Eye className="h-4 w-4" />
                           </button>
                           <button
-                            onClick={() => alert(`Edit player ${player.id}`)}
+                            onClick={() => handleOpenDialog(player)}
                             className="p-2 rounded-lg text-club-silver hover:text-white hover:bg-club-surface transition-colors"
                             title="Edit"
                           >
@@ -206,6 +370,226 @@ const AdminPlayers = () => {
           </div>
         )}
       </div>
+
+      {/* Create/Edit Player Dialog */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{editingPlayer ? 'Edit Player' : 'Add Player'}</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="firstName">First Name *</Label>
+                <Input
+                  id="firstName"
+                  value={formData.firstName}
+                  onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                  placeholder="First name"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="lastName">Last Name *</Label>
+                <Input
+                  id="lastName"
+                  value={formData.lastName}
+                  onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                  placeholder="Last name"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="dateOfBirth">Date of Birth *</Label>
+                <Input
+                  id="dateOfBirth"
+                  type="date"
+                  value={formData.dateOfBirth}
+                  onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="ageGroup">Age Group *</Label>
+                <Select
+                  value={formData.ageGroup}
+                  onValueChange={(value) => setFormData({ ...formData, ageGroup: value as AgeGroup })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(['U6', 'U7', 'U8', 'U9', 'U10', 'U11', 'U12', 'U13', 'U14', 'U15', 'U16', 'U17', 'U18', 'U19', 'U21', 'Senior'] as AgeGroup[]).map((age) => (
+                      <SelectItem key={age} value={age}>{age}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="position">Position(s)</Label>
+                <Select
+                  value={formData.position[0]}
+                  onValueChange={(value) => setFormData({ ...formData, position: [value as PlayerPosition] })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select position" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(['GK', 'CB', 'LB', 'RB', 'CDM', 'CM', 'CAM', 'LW', 'RW', 'ST'] as PlayerPosition[]).map((pos) => (
+                      <SelectItem key={pos} value={pos}>{pos}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="preferredFoot">Preferred Foot</Label>
+                <Select
+                  value={formData.preferredFoot}
+                  onValueChange={(value) => setFormData({ ...formData, preferredFoot: value as 'Left' | 'Right' | 'Both' })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Left">Left</SelectItem>
+                    <SelectItem value="Right">Right</SelectItem>
+                    <SelectItem value="Both">Both</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="height">Height (cm)</Label>
+                <Input
+                  id="height"
+                  type="number"
+                  value={formData.height}
+                  onChange={(e) => setFormData({ ...formData, height: e.target.value })}
+                  placeholder="175"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="weight">Weight (kg)</Label>
+                <Input
+                  id="weight"
+                  type="number"
+                  value={formData.weight}
+                  onChange={(e) => setFormData({ ...formData, weight: e.target.value })}
+                  placeholder="70"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="teamId">Team</Label>
+                <Select
+                  value={formData.teamId}
+                  onValueChange={(value) => setFormData({ ...formData, teamId: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select team" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Unassigned</SelectItem>
+                    {teams.map((team) => (
+                      <SelectItem key={team.id} value={team.id}>
+                        {team.name} ({team.ageGroup})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="jerseyNumber">Jersey Number</Label>
+                <Input
+                  id="jerseyNumber"
+                  type="number"
+                  value={formData.jerseyNumber}
+                  onChange={(e) => setFormData({ ...formData, jerseyNumber: e.target.value })}
+                  placeholder="10"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="isActive">Status</Label>
+              <Select
+                value={formData.isActive ? 'active' : 'inactive'}
+                onValueChange={(value) => setFormData({ ...formData, isActive: value === 'active' })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="border-t border-club-border pt-4">
+              <h4 className="font-medium text-white mb-3">Emergency Contact</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="emergencyName">Name</Label>
+                  <Input
+                    id="emergencyName"
+                    value={formData.emergencyContact.name}
+                    onChange={(e) => setFormData({ ...formData, emergencyContact: { ...formData.emergencyContact, name: e.target.value } })}
+                    placeholder="Emergency contact name"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="emergencyRelationship">Relationship</Label>
+                  <Input
+                    id="emergencyRelationship"
+                    value={formData.emergencyContact.relationship}
+                    onChange={(e) => setFormData({ ...formData, emergencyContact: { ...formData.emergencyContact, relationship: e.target.value } })}
+                    placeholder="e.g., Mother, Father"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="emergencyPhone">Phone *</Label>
+                  <Input
+                    id="emergencyPhone"
+                    value={formData.emergencyContact.phone}
+                    onChange={(e) => setFormData({ ...formData, emergencyContact: { ...formData.emergencyContact, phone: e.target.value } })}
+                    placeholder="+44 7700 900123"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="emergencyEmail">Email</Label>
+                  <Input
+                    id="emergencyEmail"
+                    type="email"
+                    value={formData.emergencyContact.email}
+                    onChange={(e) => setFormData({ ...formData, emergencyContact: { ...formData.emergencyContact, email: e.target.value } })}
+                    placeholder="contact@example.com"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={handleCloseDialog}>
+                Cancel
+              </Button>
+              <Button type="submit" className="bg-club-red hover:bg-club-red-hover">
+                {editingPlayer ? 'Update Player' : 'Add Player'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

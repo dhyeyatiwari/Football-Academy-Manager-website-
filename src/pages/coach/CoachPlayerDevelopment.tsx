@@ -22,7 +22,25 @@ import { StatCard } from '@/components/portal/StatCard';
 import { EmptyState } from '@/components/portal/EmptyState';
 import { dataService } from '@/services/dataService';
 import { useAuth } from '@/contexts/AuthContext';
-import type { PlayerReport, Player, Team } from '@/types/domain';
+import { showSuccess, showError } from '@/utils/toast';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import type { PlayerReport, Player, Team, ScoutRatings } from '@/types/domain';
 
 const CoachPlayerDevelopment = () => {
   const { user } = useAuth();
@@ -30,6 +48,30 @@ const CoachPlayerDevelopment = () => {
   const [players, setPlayers] = useState<Player[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingReport, setEditingReport] = useState<PlayerReport | null>(null);
+  const [formData, setFormData] = useState({
+    playerId: '',
+    playerName: '',
+    coachId: user?.id || '',
+    coachName: user?.fullName || '',
+    teamId: '',
+    teamName: '',
+    assessmentDate: new Date().toISOString(),
+    ratings: {
+      technical: 5,
+      tactical: 5,
+      physical: 5,
+      psychological: 5,
+      attitude: 5,
+      overall: 5.0,
+    },
+    strengths: '',
+    weaknesses: '',
+    developmentObjectives: '',
+    observations: '',
+    coachRecommendations: '',
+  });
 
   useEffect(() => {
     if (user) {
@@ -44,15 +86,121 @@ const CoachPlayerDevelopment = () => {
     }
   }, [user]);
 
-  const handleDelete = (id: string) => {
-    if (confirm('Are you sure you want to delete this report?')) {
-      // In a real app, this would call dataService.deletePlayerReport
-      setReports((prev) => prev.filter((r) => r.id !== id));
+  const handleOpenDialog = (report?: PlayerReport) => {
+    if (report) {
+      setEditingReport(report);
+      setFormData({
+        playerId: report.playerId,
+        playerName: report.playerName,
+        coachId: report.coachId,
+        coachName: report.coachName,
+        teamId: report.teamId,
+        teamName: report.teamName,
+        assessmentDate: report.assessmentDate,
+        ratings: {
+          technical: report.ratings.technical,
+          tactical: report.ratings.tactical,
+          physical: report.ratings.physical,
+          psychological: report.ratings.psychological,
+          attitude: report.ratings.attitude,
+          overall: report.ratings.overall,
+        },
+        strengths: report.strengths.join(', ') || '',
+        weaknesses: report.weaknesses.join(', ') || '',
+        developmentObjectives: report.developmentObjectives.join(', ') || '',
+        observations: report.observations.join(', ') || '',
+        coachRecommendations: report.coachRecommendations || '',
+      });
+    } else {
+      setEditingReport(null);
+      setFormData({
+        playerId: '',
+        playerName: '',
+        coachId: user?.id || '',
+        coachName: user?.fullName || '',
+        teamId: '',
+        teamName: '',
+        assessmentDate: new Date().toISOString(),
+        ratings: {
+          technical: 5,
+          tactical: 5,
+          physical: 5,
+          psychological: 5,
+          attitude: 5,
+          overall: 5.0,
+        },
+        strengths: '',
+        weaknesses: '',
+        developmentObjectives: '',
+        observations: '',
+        coachRecommendations: '',
+      });
     }
+    setIsDialogOpen(true);
   };
 
-  const getLatestReport = (playerId: string) => {
-    return reports.filter((r) => r.playerId === playerId).sort((a, b) => new Date(b.assessmentDate).getTime() - new Date(a.assessmentDate).getTime())[0];
+  const handleCloseDialog = () => {
+    setIsDialogOpen(false);
+    setEditingReport(null);
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!formData.playerId || !formData.teamId) {
+      showError('Please select a player and team');
+      return;
+    }
+
+    const report: PlayerReport = {
+      id: editingReport?.id || `report_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      playerId: formData.playerId,
+      playerName: formData.playerName,
+      coachId: formData.coachId,
+      coachName: formData.coachName,
+      teamId: formData.teamId,
+      teamName: formData.teamName,
+      assessmentDate: formData.assessmentDate,
+      ratings: {
+        technical: formData.ratings.technical,
+        tactical: formData.ratings.tactical,
+        physical: formData.ratings.physical,
+        psychological: formData.ratings.psychological,
+        attitude: formData.ratings.attitude,
+        overall: formData.ratings.overall,
+      },
+      strengths: formData.strengths ? formData.strengths.split(',').filter(Boolean) : [],
+      weaknesses: formData.weaknesses ? formData.weaknesses.split(',').filter(Boolean) : [],
+      developmentObjectives: formData.developmentObjectives ? formData.developmentObjectives.split(',').filter(Boolean) : [],
+      observations: formData.observations ? formData.observations.split(',').filter(Boolean) : [],
+      coachRecommendations: formData.coachRecommendations || '',
+      previousReportId: editingReport?.id,
+      createdAt: editingReport?.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    dataService.savePlayerReport(report);
+
+    // Update local state
+    if (editingReport) {
+      setReports((prev) =>
+        prev.map((r) => (r.id === report.id ? report : r))
+      );
+      showSuccess('Player report updated successfully');
+    } else {
+      setReports((prev) => [report, ...prev]);
+      showSuccess('Player report created successfully');
+    }
+
+    handleCloseDialog();
+  };
+
+  const handleDelete = (id: string) => {
+    if (confirm('Are you sure you want to delete this report?')) {
+      dataService.deletePlayerReport(id);
+      setReports((prev) => prev.filter((r) => r.id !== id));
+      showSuccess('Player report deleted successfully');
+    }
   };
 
   if (loading) {
@@ -73,7 +221,7 @@ const CoachPlayerDevelopment = () => {
         description="Track and manage player development reports and progress."
         action={
           <button
-            onClick={() => alert('Create report form would go here')}
+            onClick={() => handleOpenDialog()}
             className="inline-flex items-center gap-2 rounded-xl bg-club-red px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-club-red-hover"
           >
             <Plus className="h-4 w-4" />
@@ -93,7 +241,7 @@ const CoachPlayerDevelopment = () => {
       {/* Player Development Cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {players.map((player) => {
-          const latestReport = getLatestReport(player.id);
+          const latestReport = reports.filter((r) => r.playerId === player.id).sort((a, b) => new Date(b.assessmentDate).getTime() - new Date(a.assessmentDate).getTime())[0];
           const team = teams.find((t) => t.id === player.teamId);
           return (
             <div
@@ -138,22 +286,19 @@ const CoachPlayerDevelopment = () => {
                     <span className="text-club-muted">Physical</span>
                     <span className="font-medium text-white">{latestReport.ratings.physical}/10</span>
                   </div>
-                  <div className="w-full bg-club-bg rounded-full h-1.5">
-                    <div className="bg-club-red h-1.5 rounded-full" style={{ width: `${latestReport.ratings.physical * 10}%` }} />
-                  </div>
                 </div>
               )}
 
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => alert(`View report for ${player.firstName} ${player.lastName}`)}
+                  onClick={() => handleOpenDialog(latestReport)}
                   className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-club-surface/50 px-3 py-2 text-xs font-medium text-club-silver hover:bg-club-surface hover:text-white transition-colors"
                 >
                   <Eye className="h-3.5 w-3.5" />
                   View Report
                 </button>
                 <button
-                  onClick={() => alert(`Edit report for ${player.firstName} ${player.lastName}`)}
+                  onClick={() => handleOpenDialog(latestReport)}
                   className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-club-surface/50 px-3 py-2 text-xs font-medium text-club-silver hover:bg-club-surface hover:text-white transition-colors"
                 >
                   <Edit3 className="h-3.5 w-3.5" />

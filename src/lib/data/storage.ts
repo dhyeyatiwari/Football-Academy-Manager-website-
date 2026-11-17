@@ -106,6 +106,10 @@ function saveToStorage<T>(key: string, value: T): void {
   }
 }
 
+export function generateId(prefix: string): string {
+  return `${prefix}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+}
+
 // ============================================
 // STORAGE SERVICE
 // ============================================
@@ -125,15 +129,19 @@ export const storage = {
   },
 
   saveUser: (user: UserProfile): void => {
-    const users = storage.getUsers();
-    const index = users.findIndex((u) => u.id === user.id);
-    if (index >= 0) {
-      users[index] = user;
-    } else {
-      users.push(user);
-    }
-    saveToStorage(KEYS.USERS, users);
-  },
+      const users = storage.getUsers();
+      const index = users.findIndex((u) => u.id === user.id);
+      if (index >= 0) {
+        users[index] = user;
+      } else {
+        users.push(user);
+      }
+      saveToStorage(KEYS.USERS, users);
+    },
+  
+    deleteUser: (id: string): void => {
+      saveToStorage(KEYS.USERS, storage.getUsers().filter((u) => u.id !== id));
+    },
 
   // ============================================
   // TEAMS
@@ -165,6 +173,10 @@ export const storage = {
 
   getTeamsByAgeGroup: (ageGroup: AgeGroup): Team[] => {
     return storage.getTeams().filter((t) => t.ageGroup === ageGroup);
+  },
+
+  deleteTeam: (id: string): void => {
+    saveToStorage(KEYS.TEAMS, storage.getTeams().filter((t) => t.id !== id));
   },
 
   // ============================================
@@ -199,13 +211,21 @@ export const storage = {
     saveToStorage(KEYS.PLAYERS, players);
   },
 
+  deletePlayer: (id: string): void => {
+    saveToStorage(KEYS.PLAYERS, storage.getPlayers().filter((p) => p.id !== id));
+  },
+
   // ============================================
   // MATCHES
   // ============================================
 
   getMatches: (): Match[] => {
-    return loadFromStorage<Match[]>(KEYS.MATCHES, []);
-  },
+      return loadFromStorage<Match[]>(KEYS.MATCHES, []);
+    },
+  
+    deleteMatch: (id: string): void => {
+      saveToStorage(KEYS.MATCHES, storage.getMatches().filter((m) => m.id !== id));
+    },
 
   getMatch: (id: string): Match | null => {
     const matches = storage.getMatches();
@@ -232,8 +252,12 @@ export const storage = {
   // ============================================
 
   getTrainingSessions: (): TrainingSession[] => {
-    return loadFromStorage<TrainingSession[]>(KEYS.TRAINING_SESSIONS, []);
-  },
+      return loadFromStorage<TrainingSession[]>(KEYS.TRAINING_SESSIONS, []);
+    },
+  
+    deleteTrainingSession: (id: string): void => {
+      saveToStorage(KEYS.TRAINING_SESSIONS, storage.getTrainingSessions().filter((s) => s.id !== id));
+    },
 
   getSession: (id: string): TrainingSession | null => {
     const sessions = storage.getTrainingSessions();
@@ -273,8 +297,12 @@ export const storage = {
   },
 
   getSessionPlansBySession: (sessionId: string): SessionPlan[] => {
-    return storage.getSessionPlans().filter((p) => p.trainingSessionId === sessionId);
-  },
+      return storage.getSessionPlans().filter((p) => p.trainingSessionId === sessionId);
+    },
+  
+    deleteSessionPlan: (id: string): void => {
+      saveToStorage(KEYS.SESSION_PLANS, storage.getSessionPlans().filter((p) => p.id !== id));
+    },
 
   saveSessionPlan: (plan: SessionPlan): void => {
     const plans = storage.getSessionPlans();
@@ -300,8 +328,12 @@ export const storage = {
   },
 
   getAttendanceByPlayer: (playerId: string): AttendanceRecord[] => {
-    return storage.getAttendance().filter((a) => a.playerId === playerId);
-  },
+      return storage.getAttendance().filter((a) => a.playerId === playerId);
+    },
+  
+    deleteAttendance: (id: string): void => {
+      saveToStorage(KEYS.ATTENDANCE, storage.getAttendance().filter((a) => a.id !== id));
+    },
 
   saveAttendance: (attendance: AttendanceRecord): void => {
     const records = storage.getAttendance();
@@ -332,8 +364,12 @@ export const storage = {
   },
 
   getPlayerReportsByCoach: (coachId: string): PlayerReport[] => {
-    return storage.getPlayerReports().filter((r) => r.coachId === coachId);
-  },
+      return storage.getPlayerReports().filter((r) => r.coachId === coachId);
+    },
+  
+    deletePlayerReport: (id: string): void => {
+      saveToStorage(KEYS.PLAYER_REPORTS, storage.getPlayerReports().filter((r) => r.id !== id));
+    },
 
   savePlayerReport: (report: PlayerReport): void => {
     const reports = storage.getPlayerReports();
@@ -359,8 +395,12 @@ export const storage = {
   },
 
   getSessionObservationsByPlayer: (playerId: string): SessionObservation[] => {
-    return storage.getSessionObservations().filter((o) => o.playerId === playerId);
-  },
+      return storage.getSessionObservations().filter((o) => o.playerId === playerId);
+    },
+  
+    deleteSessionObservation: (id: string): void => {
+      saveToStorage(KEYS.SESSION_OBSERVATIONS, storage.getSessionObservations().filter((o) => o.id !== id));
+    },
 
   saveSessionObservation: (observation: SessionObservation): void => {
     const observations = storage.getSessionObservations();
@@ -386,8 +426,12 @@ export const storage = {
   },
 
   getFeeRecordsByStatus: (status: FeeRecord['status']): FeeRecord[] => {
-    return storage.getFeeRecords().filter((f) => f.status === status);
-  },
+      return storage.getFeeRecords().filter((f) => f.status === status);
+    },
+  
+    deleteFeeRecord: (id: string): void => {
+      saveToStorage(KEYS.FEE_RECORDS, storage.getFeeRecords().filter((f) => f.id !== id));
+    },
 
   saveFeeRecord: (record: FeeRecord): void => {
     const records = storage.getFeeRecords();
@@ -414,8 +458,12 @@ export const storage = {
   },
 
   getParentByUserId: (userId: string): Parent | null => {
-    return storage.getParents().find((p) => p.userId === userId) || null;
-  },
+      return storage.getParents().find((p) => p.userId === userId) || null;
+    },
+  
+    deleteParent: (id: string): void => {
+      saveToStorage(KEYS.PARENTS, storage.getParents().filter((p) => p.id !== id));
+    },
 
   saveParent: (parent: Parent): void => {
     const parents = storage.getParents();
@@ -446,8 +494,12 @@ export const storage = {
   },
 
   getCoachesByTeam: (teamId: string): Coach[] => {
-    return storage.getCoaches().filter((c) => c.teamIds.includes(teamId));
-  },
+      return storage.getCoaches().filter((c) => c.teamIds.includes(teamId));
+    },
+  
+    deleteCoach: (id: string): void => {
+      saveToStorage(KEYS.COACHES, storage.getCoaches().filter((c) => c.id !== id));
+    },
 
   saveCoach: (coach: Coach): void => {
     const coaches = storage.getCoaches();
@@ -478,9 +530,13 @@ export const storage = {
   },
 
   getAnnouncementsByTeam: (teamId?: string): Announcement[] => {
-    if (!teamId) return storage.getAnnouncements();
-    return storage.getAnnouncements().filter((a) => a.targetTeamIds?.includes(teamId));
-  },
+      if (!teamId) return storage.getAnnouncements();
+      return storage.getAnnouncements().filter((a) => a.targetTeamIds?.includes(teamId));
+    },
+  
+    deleteAnnouncement: (id: string): void => {
+      saveToStorage(KEYS.ANNOUNCEMENTS, storage.getAnnouncements().filter((a) => a.id !== id));
+    },
 
   saveAnnouncement: (announcement: Announcement): void => {
     const announcements = storage.getAnnouncements();
@@ -508,15 +564,19 @@ export const storage = {
   },
 
   saveNotification: (notification: Notification): void => {
-    const notifications = storage.getAllNotifications();
-    const index = notifications.findIndex((n) => n.id === notification.id);
-    if (index >= 0) {
-      notifications[index] = notification;
-    } else {
-      notifications.push(notification);
-    }
-    saveToStorage(KEYS.NOTIFICATIONS, notifications);
-  },
+      const notifications = storage.getAllNotifications();
+      const index = notifications.findIndex((n) => n.id === notification.id);
+      if (index >= 0) {
+        notifications[index] = notification;
+      } else {
+        notifications.push(notification);
+      }
+      saveToStorage(KEYS.NOTIFICATIONS, notifications);
+    },
+  
+    deleteNotification: (id: string): void => {
+      saveToStorage(KEYS.NOTIFICATIONS, storage.getAllNotifications().filter((n) => n.id !== id));
+    },
 
   // ============================================
   // SCOUT REPORTS (existing)
@@ -536,15 +596,19 @@ export const storage = {
   },
 
   saveScoutReport: (report: ScoutReport): void => {
-    const reports = storage.getScoutReports();
-    const index = reports.findIndex((r) => r.id === report.id);
-    if (index >= 0) {
-      reports[index] = report;
-    } else {
-      reports.push(report);
-    }
-    saveToStorage(KEYS.SCOUT_REPORTS, reports);
-  },
+      const reports = storage.getScoutReports();
+      const index = reports.findIndex((r) => r.id === report.id);
+      if (index >= 0) {
+        reports[index] = report;
+      } else {
+        reports.push(report);
+      }
+      saveToStorage(KEYS.SCOUT_REPORTS, reports);
+    },
+  
+    deleteScoutReport: (id: string): void => {
+      saveToStorage(KEYS.SCOUT_REPORTS, storage.getScoutReports().filter((r) => r.id !== id));
+    },
 
   // ============================================
   // FACILITIES & EQUIPMENT
@@ -555,30 +619,38 @@ export const storage = {
   },
 
   saveFacility: (facility: Facility): void => {
-    const facilities = storage.getFacilities();
-    const index = facilities.findIndex((f) => f.id === facility.id);
-    if (index >= 0) {
-      facilities[index] = facility;
-    } else {
-      facilities.push(facility);
-    }
-    saveToStorage(KEYS.FACILITIES, facilities);
-  },
+      const facilities = storage.getFacilities();
+      const index = facilities.findIndex((f) => f.id === facility.id);
+      if (index >= 0) {
+        facilities[index] = facility;
+      } else {
+        facilities.push(facility);
+      }
+      saveToStorage(KEYS.FACILITIES, facilities);
+    },
+  
+    deleteFacility: (id: string): void => {
+      saveToStorage(KEYS.FACILITIES, storage.getFacilities().filter((f) => f.id !== id));
+    },
 
   getEquipmentItems: (): Equipment[] => {
     return loadFromStorage<Equipment[]>(KEYS.EQUIPMENT, []);
   },
 
   saveEquipment: (equipment: Equipment): void => {
-    const items = storage.getEquipmentItems();
-    const index = items.findIndex((e) => e.id === equipment.id);
-    if (index >= 0) {
-      items[index] = equipment;
-    } else {
-      items.push(equipment);
-    }
-    saveToStorage(KEYS.EQUIPMENT, items);
-  },
+      const items = storage.getEquipmentItems();
+      const index = items.findIndex((e) => e.id === equipment.id);
+      if (index >= 0) {
+        items[index] = equipment;
+      } else {
+        items.push(equipment);
+      }
+      saveToStorage(KEYS.EQUIPMENT, items);
+    },
+  
+    deleteEquipment: (id: string): void => {
+      saveToStorage(KEYS.EQUIPMENT, storage.getEquipmentItems().filter((e) => e.id !== id));
+    },
 
   // ============================================
   // DASHBOARD METRICS
@@ -723,8 +795,12 @@ export const storage = {
   },
 
   getSubscriptionByPlayer: (playerId: string): Subscription | null => {
-    return storage.getSubscriptions().find((s) => s.playerId === playerId) || null;
-  },
+      return storage.getSubscriptions().find((s) => s.playerId === playerId) || null;
+    },
+  
+    deleteSubscription: (id: string): void => {
+      saveToStorage(KEYS.SUBSCRIPTIONS, storage.getSubscriptions().filter((s) => s.id !== id));
+    },
 
   saveSubscription: (subscription: Subscription): void => {
     const subscriptions = storage.getSubscriptions();
@@ -746,8 +822,12 @@ export const storage = {
   },
 
   getPendingPayments: (): Payment[] => {
-    return storage.getPayments().filter((p) => p.status === 'Pending');
-  },
+      return storage.getPayments().filter((p) => p.status === 'Pending');
+    },
+  
+    deletePayment: (id: string): void => {
+      saveToStorage(KEYS.PAYMENTS, storage.getPayments().filter((p) => p.id !== id));
+    },
 
   savePayment: (payment: Payment): void => {
     const payments = storage.getPayments();

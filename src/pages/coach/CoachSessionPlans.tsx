@@ -14,19 +14,57 @@ import {
   FileText,
   Download,
   Eye,
+  Users,
 } from 'lucide-react';
 import { PageHeader } from '@/components/portal/PageHeader';
 import { StatCard } from '@/components/portal/StatCard';
 import { EmptyState } from '@/components/portal/EmptyState';
 import { dataService } from '@/services/dataService';
 import { useAuth } from '@/contexts/AuthContext';
-import type { SessionPlan, Team } from '@/types/domain';
+import { showSuccess, showError } from '@/utils/toast';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import type { SessionPlan, Team, SessionPlanCategory } from '@/types/domain';
 
 const CoachSessionPlans = () => {
   const { user } = useAuth();
   const [plans, setPlans] = useState<SessionPlan[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingPlan, setEditingPlan] = useState<SessionPlan | null>(null);
+  const [formData, setFormData] = useState({
+    title: '',
+    description: '',
+    category: 'Technical' as SessionPlanCategory,
+    teamId: '',
+    totalDuration: '',
+    objectives: '',
+    warmUp: '',
+    technicalDrills: '',
+    tacticalActivities: '',
+    smallSidedGames: '',
+    physicalConditioning: '',
+    coolDown: '',
+    equipmentRequired: '',
+    coachingPoints: '',
+  });
 
   useEffect(() => {
     if (user) {
@@ -39,10 +77,120 @@ const CoachSessionPlans = () => {
     }
   }, [user]);
 
+  const handleOpenDialog = (plan?: SessionPlan) => {
+    if (plan) {
+      setEditingPlan(plan);
+      setFormData({
+        title: plan.title,
+        description: plan.description || '',
+        category: plan.category,
+        teamId: plan.teamId,
+        totalDuration: plan.totalDuration?.toString() || '',
+        objectives: plan.objectives?.join('\n') || '',
+        warmUp: plan.warmUp?.join('\n') || '',
+        technicalDrills: plan.technicalDrills?.join('\n') || '',
+        tacticalActivities: plan.tacticalActivities?.join('\n') || '',
+        smallSidedGames: plan.smallSidedGames?.join('\n') || '',
+        physicalConditioning: plan.physicalConditioning?.join('\n') || '',
+        coolDown: plan.coolDown?.join('\n') || '',
+        equipmentRequired: plan.equipmentRequired?.join('\n') || '',
+        coachingPoints: plan.coachingPoints?.join('\n') || '',
+      });
+    } else {
+      setEditingPlan(null);
+      setFormData({
+        title: '',
+        description: '',
+        category: 'Technical',
+        teamId: '',
+        totalDuration: '',
+        objectives: '',
+        warmUp: '',
+        technicalDrills: '',
+        tacticalActivities: '',
+        smallSidedGames: '',
+        physicalConditioning: '',
+        coolDown: '',
+        equipmentRequired: '',
+        coachingPoints: '',
+      });
+    }
+    setIsDialogOpen(true);
+  };
+
+  const handleCloseDialog = () => {
+    setIsDialogOpen(false);
+    setEditingPlan(null);
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!formData.title.trim() || !formData.teamId) {
+      showError('Please fill in all required fields');
+      return;
+    }
+
+    const team = teams.find((t) => t.id === formData.teamId);
+    if (!team) {
+      showError('Invalid team selected');
+      return;
+    }
+
+    const plan: SessionPlan = {
+      id: editingPlan?.id || `plan_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      trainingSessionId: editingPlan?.trainingSessionId || '',
+      coachId: user?.id || '',
+      coachName: user?.fullName || '',
+      teamId: formData.teamId,
+      teamName: team.name,
+      title: formData.title,
+      description: formData.description || undefined,
+      category: formData.category,
+      objectives: formData.objectives ? formData.objectives.split('\n').filter(Boolean) : undefined,
+      warmUp: formData.warmUp ? formData.warmUp.split('\n').filter(Boolean) : undefined,
+      technicalDrills: formData.technicalDrills ? formData.technicalDrills.split('\n').filter(Boolean) : undefined,
+      tacticalActivities: formData.tacticalActivities ? formData.tacticalActivities.split('\n').filter(Boolean) : undefined,
+      smallSidedGames: formData.smallSidedGames ? formData.smallSidedGames.split('\n').filter(Boolean) : undefined,
+      physicalConditioning: formData.physicalConditioning ? formData.physicalConditioning.split('\n').filter(Boolean) : undefined,
+      coolDown: formData.coolDown ? formData.coolDown.split('\n').filter(Boolean) : undefined,
+      equipmentRequired: formData.equipmentRequired ? formData.equipmentRequired.split('\n').filter(Boolean) : undefined,
+      coachingPoints: formData.coachingPoints ? formData.coachingPoints.split('\n').filter(Boolean) : undefined,
+      totalDuration: formData.totalDuration ? parseInt(formData.totalDuration) : undefined,
+      fileType: 'structured',
+      createdAt: editingPlan?.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    dataService.saveSessionPlan(plan);
+    
+    // Update local state
+    if (editingPlan) {
+      setPlans((prev) => prev.map((p) => (p.id === plan.id ? plan : p)));
+      showSuccess('Session plan updated successfully');
+    } else {
+      setPlans((prev) => [plan, ...prev]);
+      showSuccess('Session plan created successfully');
+    }
+
+    handleCloseDialog();
+  };
+
   const handleDelete = (id: string) => {
     if (confirm('Are you sure you want to delete this session plan?')) {
-      // In a real app, this would call dataService.deleteSessionPlan
+      dataService.deleteSessionPlan(id);
       setPlans((prev) => prev.filter((p) => p.id !== id));
+      showSuccess('Session plan deleted successfully');
+    }
+  };
+
+  const handleDownload = (plan: SessionPlan) => {
+    if (plan.fileUrl) {
+      // In a real app, this would download from Supabase Storage
+      // For now, we'll just show a message
+      showSuccess(`Downloading ${plan.fileName || 'file'}...`);
+    } else {
+      showError('No file attached to this plan');
     }
   };
 
@@ -64,7 +212,7 @@ const CoachSessionPlans = () => {
         description="Create and manage training session plans for your teams."
         action={
           <button
-            onClick={() => alert('Create session plan form would go here')}
+            onClick={() => handleOpenDialog()}
             className="inline-flex items-center gap-2 rounded-xl bg-club-red px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-club-red-hover"
           >
             <Plus className="h-4 w-4" />
@@ -125,14 +273,7 @@ const CoachSessionPlans = () => {
                     </div>
                     <div className="flex items-center gap-2 ml-4">
                       <button
-                        onClick={() => alert(`View plan ${plan.id}`)}
-                        className="p-2 rounded-lg text-club-silver hover:text-white hover:bg-club-surface transition-colors"
-                        title="View plan"
-                      >
-                        <Eye className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => alert(`Edit plan ${plan.id}`)}
+                        onClick={() => handleOpenDialog(plan)}
                         className="p-2 rounded-lg text-club-silver hover:text-white hover:bg-club-surface transition-colors"
                         title="Edit plan"
                       >
@@ -140,7 +281,7 @@ const CoachSessionPlans = () => {
                       </button>
                       {plan.fileUrl && (
                         <button
-                          onClick={() => alert(`Download ${plan.fileName || 'file'}`)}
+                          onClick={() => handleDownload(plan)}
                           className="p-2 rounded-lg text-club-silver hover:text-white hover:bg-club-surface transition-colors"
                           title="Download file"
                         >
@@ -162,6 +303,199 @@ const CoachSessionPlans = () => {
           </div>
         )}
       </div>
+
+      {/* Create/Edit Dialog */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{editingPlan ? 'Edit Session Plan' : 'Create Session Plan'}</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="title">Title *</Label>
+                <Input
+                  id="title"
+                  value={formData.title}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  placeholder="e.g., U14 Technical Development"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="category">Category *</Label>
+                <Select
+                  value={formData.category}
+                  onValueChange={(value) => setFormData({ ...formData, category: value as SessionPlanCategory })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Technical">Technical</SelectItem>
+                    <SelectItem value="Tactical">Tactical</SelectItem>
+                    <SelectItem value="Physical">Physical</SelectItem>
+                    <SelectItem value="Goalkeeping">Goalkeeping</SelectItem>
+                    <SelectItem value="Match Prep">Match Prep</SelectItem>
+                    <SelectItem value="Recovery">Recovery</SelectItem>
+                    <SelectItem value="Video Analysis">Video Analysis</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="team">Team *</Label>
+                <Select
+                  value={formData.teamId}
+                  onValueChange={(value) => setFormData({ ...formData, teamId: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a team" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {teams.map((team) => (
+                      <SelectItem key={team.id} value={team.id}>
+                        {team.name} ({team.ageGroup})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="duration">Duration (minutes)</Label>
+                <Input
+                  id="duration"
+                  type="number"
+                  value={formData.totalDuration}
+                  onChange={(e) => setFormData({ ...formData, totalDuration: e.target.value })}
+                  placeholder="e.g., 90"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                placeholder="Brief description of the session plan"
+                rows={2}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="objectives">Objectives</Label>
+              <Textarea
+                id="objectives"
+                value={formData.objectives}
+                onChange={(e) => setFormData({ ...formData, objectives: e.target.value })}
+                placeholder="Enter each objective on a new line"
+                rows={3}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="warmUp">Warm-up Activities</Label>
+              <Textarea
+                id="warmUp"
+                value={formData.warmUp}
+                onChange={(e) => setFormData({ ...formData, warmUp: e.target.value })}
+                placeholder="Enter each warm-up activity on a new line"
+                rows={3}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="technicalDrills">Technical Drills</Label>
+              <Textarea
+                id="technicalDrills"
+                value={formData.technicalDrills}
+                onChange={(e) => setFormData({ ...formData, technicalDrills: e.target.value })}
+                placeholder="Enter each technical drill on a new line"
+                rows={3}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="tacticalActivities">Tactical Activities</Label>
+              <Textarea
+                id="tacticalActivities"
+                value={formData.tacticalActivities}
+                onChange={(e) => setFormData({ ...formData, tacticalActivities: e.target.value })}
+                placeholder="Enter each tactical activity on a new line"
+                rows={3}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="smallSidedGames">Small-Sided Games</Label>
+              <Textarea
+                id="smallSidedGames"
+                value={formData.smallSidedGames}
+                onChange={(e) => setFormData({ ...formData, smallSidedGames: e.target.value })}
+                placeholder="Enter each small-sided game on a new line"
+                rows={3}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="physicalConditioning">Physical Conditioning</Label>
+              <Textarea
+                id="physicalConditioning"
+                value={formData.physicalConditioning}
+                onChange={(e) => setFormData({ ...formData, physicalConditioning: e.target.value })}
+                placeholder="Enter each physical conditioning activity on a new line"
+                rows={3}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="coolDown">Cool-down</Label>
+              <Textarea
+                id="coolDown"
+                value={formData.coolDown}
+                onChange={(e) => setFormData({ ...formData, coolDown: e.target.value })}
+                placeholder="Enter each cool-down activity on a new line"
+                rows={3}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="equipmentRequired">Equipment Required</Label>
+              <Textarea
+                id="equipmentRequired"
+                value={formData.equipmentRequired}
+                onChange={(e) => setFormData({ ...formData, equipmentRequired: e.target.value })}
+                placeholder="Enter each equipment item on a new line"
+                rows={3}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="coachingPoints">Coaching Points</Label>
+              <Textarea
+                id="coachingPoints"
+                value={formData.coachingPoints}
+                onChange={(e) => setFormData({ ...formData, coachingPoints: e.target.value })}
+                placeholder="Enter each coaching point on a new line"
+                rows={3}
+              />
+            </div>
+
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={handleCloseDialog}>
+                Cancel
+              </Button>
+              <Button type="submit" className="bg-club-red hover:bg-club-red-hover">
+                {editingPlan ? 'Update Plan' : 'Create Plan'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
