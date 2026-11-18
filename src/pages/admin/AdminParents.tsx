@@ -11,15 +11,32 @@ import {
   Eye,
   UserPlus,
   Download,
-  Mail,
-  Phone,
-  MapPin,
-  Baby,
+  Calendar,
+  UserCircle,
 } from 'lucide-react';
 import { PageHeader } from '@/components/portal/PageHeader';
 import { StatCard } from '@/components/portal/StatCard';
 import { EmptyState } from '@/components/portal/EmptyState';
 import { dataService } from '@/services/dataService';
+import { useAuth } from '@/contexts/AuthContext';
+import { showSuccess, showError } from '@/utils/toast';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import type { Parent, Player } from '@/types/domain';
 
 const AdminParents = () => {
@@ -27,6 +44,15 @@ const AdminParents = () => {
   const [players, setPlayers] = useState<Player[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingParent, setEditingParent] = useState<Parent | null>(null);
+  const [formData, setFormData] = useState({
+    fullName: '',
+    email: '',
+    phone: '',
+    address: '',
+    childrenIds: [] as string[],
+  });
 
   useEffect(() => {
     setParents(dataService.getParents());
@@ -40,10 +66,73 @@ const AdminParents = () => {
     return matchesSearch;
   });
 
+  const handleOpenDialog = (parent?: Parent) => {
+    if (parent) {
+      setEditingParent(parent);
+      setFormData({
+        fullName: parent.fullName,
+        email: parent.email,
+        phone: parent.phone || '',
+        address: parent.address || '',
+        childrenIds: parent.childrenIds,
+      });
+    } else {
+      setEditingParent(null);
+      setFormData({
+        fullName: '',
+        email: '',
+        phone: '',
+        address: '',
+        childrenIds: [],
+      });
+    }
+    setIsDialogOpen(true);
+  };
+
+  const handleCloseDialog = () => {
+    setIsDialogOpen(false);
+    setEditingParent(null);
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!formData.fullName.trim() || !formData.email.trim()) {
+      showError('Please fill in all required fields');
+      return;
+    }
+
+    const parent: Parent = {
+      id: editingParent?.id || `parent_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      userId: editingParent?.userId || `user_${Date.now()}`,
+      fullName: formData.fullName,
+      email: formData.email,
+      phone: formData.phone || undefined,
+      address: formData.address || undefined,
+      childrenIds: formData.childrenIds,
+      childrenNames: formData.childrenIds.map((id) => players.find((p) => p.id === id)?.firstName || ''),
+      createdAt: editingParent?.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    dataService.saveParent(parent);
+
+    if (editingParent) {
+      setParents((prev) => prev.map((p) => (p.id === parent.id ? parent : p)));
+      showSuccess('Parent updated successfully');
+    } else {
+      setParents((prev) => [...prev, parent]);
+      showSuccess('Parent added successfully');
+    }
+
+    handleCloseDialog();
+  };
+
   const handleDelete = (id: string) => {
     if (confirm('Are you sure you want to delete this parent?')) {
-      // In a real app, this would call dataService.deleteParent
+      dataService.deleteParent(id);
       setParents((prev) => prev.filter((p) => p.id !== id));
+      showSuccess('Parent deleted successfully');
     }
   };
 
@@ -62,10 +151,10 @@ const AdminParents = () => {
     <div>
       <PageHeader
         title="Parents"
-        description="Manage parent accounts and their children's enrollment."
+        description="Manage parent accounts and link them to their children."
         action={
           <button
-            onClick={() => alert('Add parent form would go here')}
+            onClick={() => handleOpenDialog()}
             className="inline-flex items-center gap-2 rounded-xl bg-club-red px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-club-red-hover"
           >
             <Plus className="h-4 w-4" />
@@ -77,9 +166,9 @@ const AdminParents = () => {
       {/* Stats */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4 mb-6">
         <StatCard label="Total Parents" value={parents.length} icon={Users} />
-        <StatCard label="With Children" value={parents.filter((p) => p.childIds.length > 0).length} icon={Baby} />
-        <StatCard label="Total Children" value={parents.reduce((acc, p) => acc + p.childIds.length, 0)} icon={UserPlus} />
-        <StatCard label="Avg Children" value={parents.length > 0 ? (parents.reduce((acc, p) => acc + p.childIds.length, 0) / parents.length).toFixed(1) : '0'} icon={Users} />
+        <StatCard label="With Children" value={parents.filter((p) => p.childrenIds.length > 0).length} icon={UserPlus} />
+        <StatCard label="Linked Players" value={[...new Set(parents.flatMap((p) => p.childrenIds))].length} icon={Users} />
+        <StatCard label="Players Without Parent" value={players.filter((p) => !p.parentIds || p.parentIds.length === 0).length} icon={UserCircle} />
       </div>
 
       {/* Filters */}
@@ -108,7 +197,7 @@ const AdminParents = () => {
           </div>
         ) : (
           filteredParents.map((parent) => {
-            const children = players.filter((p) => parent.childIds.includes(p.id));
+            const parentPlayers = players.filter((p) => parent.childrenIds.includes(p.id));
             return (
               <div
                 key={parent.id}
@@ -133,44 +222,40 @@ const AdminParents = () => {
                       <span>{parent.phone}</span>
                     </div>
                   )}
-                  <div className="flex items-center gap-2 text-sm text-club-silver">
-                    <Mail className="h-4 w-4" />
-                    <span>{parent.email}</span>
-                  </div>
+                  {parent.address && (
+                    <div className="flex items-center gap-2 text-sm text-club-silver">
+                      <MapPin className="h-4 w-4" />
+                      <span className="line-clamp-1">{parent.address}</span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Children */}
                 <div className="mb-4">
-                  <p className="text-xs font-medium uppercase tracking-wider text-club-muted mb-2">Children ({children.length})</p>
-                  <div className="space-y-2">
-                    {children.length > 0 ? (
-                      children.map((child) => (
-                        <div key={child.id} className="flex items-center gap-2 p-2 rounded-lg bg-club-bg border border-club-border">
-                          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-club-red/15 text-club-red text-xs font-bold">
-                            {child.firstName[0]}{child.lastName[0]}
-                          </div>
-                          <div className="flex-1">
-                            <p className="text-sm font-medium text-white">{child.firstName} {child.lastName}</p>
-                            <p className="text-xs text-club-muted">{child.ageGroup} · {child.teamName || 'No team'}</p>
-                          </div>
-                        </div>
+                  <p className="text-xs font-medium uppercase tracking-wider text-club-muted mb-2">Children</p>
+                  <div className="flex flex-wrap gap-2">
+                    {parentPlayers.length > 0 ? (
+                      parentPlayers.map((player) => (
+                        <span key={player.id} className="px-2.5 py-1 rounded-lg bg-club-bg border border-club-border text-xs text-club-silver">
+                          {player.firstName} {player.lastName}
+                        </span>
                       ))
                     ) : (
-                      <span className="text-xs text-club-muted">No children enrolled</span>
+                      <span className="text-xs text-club-muted">No children linked</span>
                     )}
                   </div>
                 </div>
 
                 <div className="flex items-center gap-2">
                   <button
-                    onClick={() => alert(`View parent ${parent.id}`)}
+                    onClick={() => handleOpenDialog(parent)}
                     className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-club-surface/50 px-3 py-2 text-xs font-medium text-club-silver hover:bg-club-surface hover:text-white transition-colors"
                   >
                     <Eye className="h-3.5 w-3.5" />
                     View
                   </button>
                   <button
-                    onClick={() => alert(`Edit parent ${parent.id}`)}
+                    onClick={() => handleOpenDialog(parent)}
                     className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-club-surface/50 px-3 py-2 text-xs font-medium text-club-silver hover:bg-club-surface hover:text-white transition-colors"
                   >
                     <Edit3 className="h-3.5 w-3.5" />
@@ -189,6 +274,91 @@ const AdminParents = () => {
           })
         )}
       </div>
+
+      {/* Create/Edit Parent Dialog */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{editingParent ? 'Edit Parent' : 'Add Parent'}</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="fullName">Full Name *</Label>
+              <Input
+                id="fullName"
+                value={formData.fullName}
+                onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                placeholder="Parent full name"
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="email">Email *</Label>
+              <Input
+                id="email"
+                type="email"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                placeholder="parent@example.com"
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="phone">Phone</Label>
+              <Input
+                id="phone"
+                value={formData.phone}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                placeholder="+44 7700 900123"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="address">Address</Label>
+              <Input
+                id="address"
+                value={formData.address}
+                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                placeholder="Street address, city"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Children</Label>
+              <div className="space-y-2 max-h-40 overflow-y-auto">
+                {players.map((player) => (
+                  <label key={player.id} className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.childrenIds.includes(player.id)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setFormData({ ...formData, childrenIds: [...formData.childrenIds, player.id] });
+                        } else {
+                          setFormData({ ...formData, childrenIds: formData.childrenIds.filter((id) => id !== player.id) });
+                        }
+                      }}
+                      className="rounded border-club-border bg-club-bg text-club-red focus:ring-club-red"
+                    />
+                    <span className="text-sm text-club-silver">{player.firstName} {player.lastName}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={handleCloseDialog}>
+                Cancel
+              </Button>
+              <Button type="submit" className="bg-club-red hover:bg-club-red-hover">
+                {editingParent ? 'Update Parent' : 'Add Parent'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
